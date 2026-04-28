@@ -52,7 +52,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Raycast-inspired dark-first marketing theme (see apps/web/DESIGN.md) */
 :root {
   --background: #07080a;
   --foreground: #f9f9f9;
@@ -88,44 +87,13 @@
   --sidebar-ring: hsl(202 100% 67% / 0.35);
 }
 
-.dark {
-  --background: #07080a;
-  --foreground: #f9f9f9;
-  --card: #101111;
-  --card-foreground: #f9f9f9;
-  --popover: #101111;
-  --popover-foreground: #f9f9f9;
-  --primary: hsl(0 0% 100% / 0.815);
-  --primary-foreground: #18191a;
-  --secondary: #1b1c1e;
-  --secondary-foreground: #f9f9f9;
-  --muted: #1b1c1e;
-  --muted-foreground: #9c9c9d;
-  --accent: hsl(202 100% 67% / 0.12);
-  --accent-foreground: #55b3ff;
-  --destructive: #ff6363;
-  --border: hsl(195 5% 15%);
-  --input: hsl(195 5% 15%);
-  --ring: hsl(202 100% 67% / 0.35);
-  --chart-1: #55b3ff;
-  --chart-2: #5fc992;
-  --chart-3: #ffbc33;
-  --chart-4: #9c9c9d;
-  --chart-5: #434345;
-  --sidebar: #101111;
-  --sidebar-foreground: #f9f9f9;
-  --sidebar-primary: #55b3ff;
-  --sidebar-primary-foreground: #07080a;
-  --sidebar-accent: #1b1c1e;
-  --sidebar-accent-foreground: #f9f9f9;
-  --sidebar-border: hsl(195 5% 15%);
-  --sidebar-ring: hsl(202 100% 67% / 0.35);
-}
+.dark {}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     @apply font-sans;
     font-feature-settings:
@@ -136,6 +104,7 @@
     letter-spacing: 0.02em;
     scroll-behavior: smooth;
   }
+
   body {
     @apply bg-background text-foreground antialiased;
   }
@@ -155,13 +124,11 @@
 }
 
 @utility raycast-hero-stripes {
-  background-image: repeating-linear-gradient(
-    -18deg,
-    transparent,
-    transparent 14px,
-    rgba(255, 99, 99, 0.22) 14px,
-    rgba(255, 99, 99, 0.22) 16px
-  );
+  background-image: repeating-linear-gradient(-18deg,
+      transparent,
+      transparent 14px,
+      rgba(255, 99, 99, 0.22) 14px,
+      rgba(255, 99, 99, 0.22) 16px);
 }
 
 @utility text-balance {

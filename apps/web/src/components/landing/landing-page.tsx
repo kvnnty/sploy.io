@@ -5,7 +5,7 @@ import { WaitlistForm } from "./waitlist-form";
 
 export function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-[#07080a] text-[#f9f9f9]">
+    <div className="relative min-h-screen">
       <div
         className="pointer-events-none absolute inset-0 -z-10 opacity-80"
         aria-hidden
