@@ -1,0 +1,46 @@
+# Local development with bind mounts (no Docker image build).
+# Usage: docker compose -f docker-compose.dev.yml up
+#
+# First run installs deps inside the container; subsequent starts are faster.
+
+services:
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    command:
+      - sh
+      - -c
+      - >
+        corepack enable &&
+        corepack prepare pnpm@10.6.5 --activate &&
+        pnpm install --frozen-lockfile &&
+        pnpm --filter @sploy/web dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    depends_on:
+      - api
+
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3001:3001"
+    command:
+      - sh
+      - -c
+      - >
+        corepack enable &&
+        corepack prepare pnpm@10.6.5 --activate &&
+        pnpm install --frozen-lockfile &&
+        pnpm --filter @sploy/api dev
+    environment:
+      NODE_ENV: development
+      PORT: "3001"
+      CORS_ORIGIN: "http://localhost:3000"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -14,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sploy — Developer productivity, reimagined",
+  title: "Sploy — AI Analyst for Growth Teams",
   description:
-    "A fast, minimal command-driven workspace for builders. Keyboard-first workflows, extensions, and deep OS integration.",
+    "Stop waiting on dashboards and backlogged analysts. Sploy gives you the why behind every metric and the exact next move in seconds.",
 };
 
 export default function RootLayout({
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground overflow-hidden`}
       >
+        <Toaster theme="dark" />
         {children}
       </body>
     </html>

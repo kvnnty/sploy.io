@@ -134,3 +134,64 @@
 @utility text-balance {
   text-wrap: balance;
 }
+
+@keyframes aurora-drift-a {
+  0% {
+    transform: translate3d(-8%, -4%, 0) rotate(-8deg) scale(1);
+  }
+  50% {
+    transform: translate3d(5%, 6%, 0) rotate(6deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-8%, -4%, 0) rotate(-8deg) scale(1);
+  }
+}
+
+@keyframes aurora-drift-b {
+  0% {
+    transform: translate3d(6%, -8%, 0) rotate(10deg) scale(1.02);
+  }
+  50% {
+    transform: translate3d(-5%, 8%, 0) rotate(-6deg) scale(1.1);
+  }
+  100% {
+    transform: translate3d(6%, -8%, 0) rotate(10deg) scale(1.02);
+  }
+}
+
+@keyframes aurora-drift-c {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -5%, 0) rotate(5deg) scale(1.06);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
+@layer utilities {
+  .aurora-layer {
+    position: absolute;
+    filter: blur(70px);
+    border-radius: 9999px;
+    mix-blend-mode: screen;
+    will-change: transform;
+  }
+
+  .aurora-a {
+    background: radial-gradient(circle at 30% 40%, rgba(38, 208, 124, 0.55) 0%, rgba(8, 61, 35, 0.05) 58%, transparent 78%);
+    animation: aurora-drift-a 15s ease-in-out infinite;
+  }
+
+  .aurora-b {
+    background: radial-gradient(circle at 65% 45%, rgba(61, 220, 130, 0.36) 0%, rgba(12, 76, 42, 0.08) 55%, transparent 78%);
+    animation: aurora-drift-b 18s ease-in-out infinite;
+  }
+
+  .aurora-c {
+    background: radial-gradient(circle at 40% 45%, rgba(75, 167, 255, 0.3) 0%, rgba(17, 63, 122, 0.07) 55%, transparent 78%);
+    animation: aurora-drift-c 20s ease-in-out infinite;
+  }
+}
