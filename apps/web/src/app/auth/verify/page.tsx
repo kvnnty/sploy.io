@@ -26,7 +26,7 @@ export default function VerifyPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-sm space-y-6 rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur">
+      <div className="mx-auto w-full max-w-sm space-y-6">
         {status === 'verifying' && (
           <>
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import Logo from '@/components/shared/logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -46,7 +47,7 @@ export default function LoginPage() {
   if (magicLinkSent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="mx-auto w-full max-w-sm space-y-6 rounded-xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur">
+        <div className="mx-auto w-full max-w-sm space-y-6">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
             <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -64,10 +65,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-sm space-y-6 rounded-xl border border-white/10 bg-white/5 p-8 backdrop-blur">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to Sploy</h1>
-          <p className="mt-1 text-sm text-white/60">AI decision intelligence for your team</p>
+      <div className="mx-auto w-full max-w-sm space-y-6">
+        <div className="text-center flex flex-col items-center justify-center gap-5">
+          <Logo />
+          <h1 className="text-2xl font-bold tracking-tight text-white">Sign in to your account</h1>
         </div>
 
         {error && (
