@@ -40,7 +40,7 @@ export default async function DashboardPage() {
             <CardTitle>Connect the API</CardTitle>
             <CardDescription>
               The dashboard loads your organization and data sources from the NestJS
-              backend. Start it on port 3001 or set{' '}
+              backend. Start it on port 8080 or set{' '}
               <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
                 NEXT_PUBLIC_API_URL
               </code>
