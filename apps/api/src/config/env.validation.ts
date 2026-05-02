@@ -10,7 +10,7 @@ import {
 export class EnvironmentVariables {
   @IsNumber()
   @Type(() => Number)
-  PORT: number = 3001;
+  PORT: number = 8080;
 
   @IsString()
   CORS_ORIGIN: string = 'http://localhost:3000';

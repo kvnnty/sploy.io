@@ -31,7 +31,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - "3001:3001"
+      - "8080:8080"
     command:
       - sh
       - -c
@@ -42,5 +42,5 @@ services:
         pnpm --filter @sploy/api dev
     environment:
       NODE_ENV: development
-      PORT: "3001"
+      PORT: "8080"
       CORS_ORIGIN: "http://localhost:3000"
