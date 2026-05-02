@@ -1,0 +1,17 @@
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  domain    String?  @unique
+  logoUrl   String?  @map("logo_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  memberships    Membership[]
+  ssoConnections SsoConnection[]
+  dataSources    DataSource[]
+  authEvents     AuthEvent[]
+
+  @@map("organizations")
+  @@schema("core")
+}

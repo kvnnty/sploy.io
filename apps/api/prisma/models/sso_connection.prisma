@@ -1,0 +1,17 @@
+model SsoConnection {
+  id               String      @id @default(uuid()) @db.Uuid
+  orgId            String      @map("org_id") @db.Uuid
+  provider         SsoProvider @default(saml)
+  domain           String      @unique
+  metadataUrl      String?     @map("metadata_url")
+  metadataXml      String?     @map("metadata_xml")
+  attributeMapping Json        @default("{}") @map("attribute_mapping")
+  enabled          Boolean     @default(true)
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("sso_connections")
+  @@schema("core")
+}

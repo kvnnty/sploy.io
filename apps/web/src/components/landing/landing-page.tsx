@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 
 import Countdown from "./countdown";
 import People from "./people";
 import { WaitlistForm } from "./waitlist-form";
+import Logo from "../shared/logo";
 
 export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
   const year = useMemo(() => new Date().getFullYear(), []);
@@ -23,20 +23,7 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
 
       <div className="flex w-full max-w-2xl flex-1 self-center flex-col items-center justify-center gap-6">
         <div className="mb-6 flex flex-col items-center justify-center gap-6">
-          <Link
-            href="/"
-            className="inline-flex w-fit transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(202,100%,67%/0.35)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#07080a]"
-            aria-label="Sploy home"
-          >
-            <Image
-              src="/sploylogo-white.svg"
-              alt="Sploy"
-              width={410}
-              height={85}
-              className="h-9 w-28 sm:h-10 sm:w-32"
-              priority
-            />
-          </Link>
+          <Logo />
         </div>
 
         <div className="flex max-w-2xl flex-col items-center justify-center gap-4">
@@ -91,6 +78,12 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
               className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
             >
               Contact
+            </Link>
+            <Link
+              href="/auth/login"
+              className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
+            >
+              Join beta
             </Link>
           </div>
         </div>

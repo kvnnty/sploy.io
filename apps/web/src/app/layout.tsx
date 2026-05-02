@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground overflow-hidden`}
+        className={`${inter.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground overflow-x-hidden`}
       >
         <Toaster theme="dark" />
         {children}

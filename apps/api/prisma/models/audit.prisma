@@ -1,0 +1,31 @@
+enum AuthEventType {
+  login_success
+  login_failure
+  logout
+  magic_link_sent
+  sso_initiated
+  sso_completed
+  user_bootstrapped
+  org_created
+  membership_changed
+  session_revoked
+
+  @@schema("audit")
+}
+
+model AuthEvent {
+  id        String        @id @default(uuid()) @db.Uuid
+  eventType AuthEventType @map("event_type")
+  userId    String?       @map("user_id") @db.Uuid
+  orgId     String?       @map("org_id") @db.Uuid
+  ipAddress String?       @map("ip_address")
+  userAgent String?       @map("user_agent")
+  metadata  Json          @default("{}")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  org  Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+
+  @@map("auth_events")
+  @@schema("audit")
+}

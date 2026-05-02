@@ -1,10 +1,27 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AuditModule } from './audit';
+import { AuthModule } from './auth';
+import { BootstrapModule } from './bootstrap';
+import { DatabaseModule } from './database';
+import { SsoModule } from './sso';
+import { DataSourcesModule } from './data-sources/data-sources.module';
+import { validate } from './config/env.validation';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate,
+    }),
+    DatabaseModule,
+    AuditModule,
+    AuthModule,
+    BootstrapModule,
+    SsoModule,
+    DataSourcesModule,
+  ],
   controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
