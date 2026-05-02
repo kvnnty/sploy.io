@@ -1,5 +1,11 @@
 import { plainToInstance, Type } from 'class-transformer';
-import { IsNumber, IsString, IsUrl, validateSync } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  validateSync,
+} from 'class-validator';
 
 export class EnvironmentVariables {
   @IsNumber()
@@ -20,6 +26,15 @@ export class EnvironmentVariables {
 
   @IsString()
   DATABASE_URL!: string;
+
+  /** Base64-encoded 32-byte key for encrypting warehouse credentials */
+  @IsOptional()
+  @IsString()
+  DATASOURCE_ENCRYPTION_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  OPENAI_API_KEY?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -1,0 +1,8 @@
+enum OrgRole {
+  owner
+  admin
+  member
+  viewer
+
+  @@schema("core")
+}

@@ -1,0 +1,5 @@
+enum SsoProvider {
+  saml
+
+  @@schema("core")
+}

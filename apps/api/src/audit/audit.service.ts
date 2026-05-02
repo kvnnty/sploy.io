@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../database';
+import { AuthEventType } from '../generated/prisma/client';
+import { PrismaService } from '../database';
 
-type AuthEventType =
+type AuthEventTypeInput =
   | 'login_success'
   | 'login_failure'
   | 'logout'
@@ -14,7 +15,7 @@ type AuthEventType =
   | 'session_revoked';
 
 interface AuditLogParams {
-  eventType: AuthEventType;
+  eventType: AuthEventTypeInput;
   userId?: string | null;
   orgId?: string | null;
   ipAddress?: string | null;
@@ -26,22 +27,20 @@ interface AuditLogParams {
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async log(params: AuditLogParams): Promise<void> {
     try {
-      await this.db.query(
-        `INSERT INTO audit.auth_events (event_type, user_id, org_id, ip_address, user_agent, metadata)
-         VALUES ($1, $2, $3, $4::inet, $5, $6)`,
-        [
-          params.eventType,
-          params.userId ?? null,
-          params.orgId ?? null,
-          params.ipAddress ?? null,
-          params.userAgent ?? null,
-          JSON.stringify(params.metadata ?? {}),
-        ],
-      );
+      await this.prisma.authEvent.create({
+        data: {
+          eventType: params.eventType as AuthEventType,
+          userId: params.userId ?? null,
+          orgId: params.orgId ?? null,
+          ipAddress: params.ipAddress ?? null,
+          userAgent: params.userAgent ?? null,
+          metadata: (params.metadata ?? {}) as object,
+        },
+      });
     } catch (error) {
       this.logger.error(`Failed to write audit event: ${error}`, {
         eventType: params.eventType,

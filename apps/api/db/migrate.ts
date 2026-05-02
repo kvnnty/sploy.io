@@ -1,3 +1,7 @@
+/**
+ * Legacy SQL migrator (public._migrations). Prefer `pnpm db:migrate` → Prisma Migrate.
+ * Kept for one-off use if you cannot use Prisma against an existing database.
+ */
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Client } from 'pg';

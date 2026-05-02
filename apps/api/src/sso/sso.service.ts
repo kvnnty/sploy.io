@@ -5,9 +5,10 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database';
+import { OrgRole, type SsoConnection as SsoConnectionRow } from '../generated/prisma/client';
+import { PrismaService } from '../database';
 
-interface SsoConnection {
+export interface SsoConnection {
   id: string;
   org_id: string;
   provider: string;
@@ -17,27 +18,36 @@ interface SsoConnection {
   created_at: string;
 }
 
+function toApiConnection(row: SsoConnectionRow): SsoConnection {
+  return {
+    id: row.id,
+    org_id: row.orgId,
+    provider: row.provider,
+    domain: row.domain,
+    metadata_url: row.metadataUrl,
+    enabled: row.enabled,
+    created_at: row.createdAt.toISOString(),
+  };
+}
+
+function isAdminRole(role: OrgRole): boolean {
+  return role === OrgRole.owner || role === OrgRole.admin;
+}
+
 @Injectable()
 export class SsoService {
   private readonly logger = new Logger(SsoService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async discover(domain: string): Promise<{ orgSlug: string; enabled: boolean } | null> {
-    const { rows } = await this.db.query<{
-      slug: string;
-      enabled: boolean;
-    }>(
-      `SELECT o.slug, sc.enabled
-       FROM core.sso_connections sc
-       JOIN core.organizations o ON o.id = sc.org_id
-       WHERE sc.domain = $1
-       LIMIT 1`,
-      [domain.toLowerCase()],
-    );
+    const conn = await this.prisma.ssoConnection.findFirst({
+      where: { domain: domain.toLowerCase() },
+      include: { org: true },
+    });
 
-    if (rows.length === 0) return null;
-    return { orgSlug: rows[0].slug, enabled: rows[0].enabled };
+    if (!conn) return null;
+    return { orgSlug: conn.org.slug, enabled: conn.enabled };
   }
 
   async createConnection(
@@ -50,37 +60,33 @@ export class SsoService {
       attributeMapping?: Record<string, string>;
     },
   ): Promise<SsoConnection> {
-    const { rows: membership } = await this.db.query<{ role: string }>(
-      `SELECT role FROM core.memberships WHERE user_id = $1 AND org_id = $2`,
-      [userId, data.orgId],
-    );
-    if (membership.length === 0 || !['owner', 'admin'].includes(membership[0].role)) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, orgId: data.orgId },
+    });
+    if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');
     }
 
-    const { rows: existing } = await this.db.query(
-      'SELECT id FROM core.sso_connections WHERE domain = $1',
-      [data.domain.toLowerCase()],
-    );
-    if (existing.length > 0) {
+    const existing = await this.prisma.ssoConnection.findFirst({
+      where: { domain: data.domain.toLowerCase() },
+      select: { id: true },
+    });
+    if (existing) {
       throw new ConflictException(`SSO connection for domain "${data.domain}" already exists`);
     }
 
-    const { rows } = await this.db.query<SsoConnection>(
-      `INSERT INTO core.sso_connections (org_id, domain, metadata_url, metadata_xml, attribute_mapping)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING *`,
-      [
-        data.orgId,
-        data.domain.toLowerCase(),
-        data.metadataUrl ?? null,
-        data.metadataXml ?? null,
-        JSON.stringify(data.attributeMapping ?? {}),
-      ],
-    );
+    const row = await this.prisma.ssoConnection.create({
+      data: {
+        orgId: data.orgId,
+        domain: data.domain.toLowerCase(),
+        metadataUrl: data.metadataUrl ?? null,
+        metadataXml: data.metadataXml ?? null,
+        attributeMapping: (data.attributeMapping ?? {}) as object,
+      },
+    });
 
     this.logger.log(`SSO connection created for domain=${data.domain} org=${data.orgId}`);
-    return rows[0];
+    return toApiConnection(row);
   }
 
   async updateConnection(
@@ -93,81 +99,68 @@ export class SsoService {
       enabled?: boolean;
     },
   ): Promise<SsoConnection> {
-    const { rows: conn } = await this.db.query<{ org_id: string }>(
-      'SELECT org_id FROM core.sso_connections WHERE id = $1',
-      [connectionId],
-    );
-    if (conn.length === 0) throw new NotFoundException('SSO connection not found');
+    const conn = await this.prisma.ssoConnection.findFirst({
+      where: { id: connectionId },
+      select: { orgId: true },
+    });
+    if (!conn) throw new NotFoundException('SSO connection not found');
 
-    const { rows: membership } = await this.db.query<{ role: string }>(
-      `SELECT role FROM core.memberships WHERE user_id = $1 AND org_id = $2`,
-      [userId, conn[0].org_id],
-    );
-    if (membership.length === 0 || !['owner', 'admin'].includes(membership[0].role)) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, orgId: conn.orgId },
+    });
+    if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');
     }
 
-    const sets: string[] = [];
-    const params: unknown[] = [];
-    let idx = 1;
-
-    if (data.metadataUrl !== undefined) {
-      sets.push(`metadata_url = $${idx++}`);
-      params.push(data.metadataUrl);
-    }
-    if (data.metadataXml !== undefined) {
-      sets.push(`metadata_xml = $${idx++}`);
-      params.push(data.metadataXml);
-    }
-    if (data.attributeMapping !== undefined) {
-      sets.push(`attribute_mapping = $${idx++}`);
-      params.push(JSON.stringify(data.attributeMapping));
-    }
-    if (data.enabled !== undefined) {
-      sets.push(`enabled = $${idx++}`);
-      params.push(data.enabled);
+    if (
+      data.metadataUrl === undefined &&
+      data.metadataXml === undefined &&
+      data.attributeMapping === undefined &&
+      data.enabled === undefined
+    ) {
+      const row = await this.prisma.ssoConnection.findUniqueOrThrow({
+        where: { id: connectionId },
+      });
+      return toApiConnection(row);
     }
 
-    if (sets.length === 0) {
-      const { rows } = await this.db.query<SsoConnection>(
-        'SELECT * FROM core.sso_connections WHERE id = $1',
-        [connectionId],
-      );
-      return rows[0];
-    }
-
-    params.push(connectionId);
-    const { rows } = await this.db.query<SsoConnection>(
-      `UPDATE core.sso_connections SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
-      params,
-    );
-    return rows[0];
+    const row = await this.prisma.ssoConnection.update({
+      where: { id: connectionId },
+      data: {
+        ...(data.metadataUrl !== undefined && { metadataUrl: data.metadataUrl }),
+        ...(data.metadataXml !== undefined && { metadataXml: data.metadataXml }),
+        ...(data.attributeMapping !== undefined && {
+          attributeMapping: data.attributeMapping as object,
+        }),
+        ...(data.enabled !== undefined && { enabled: data.enabled }),
+      },
+    });
+    return toApiConnection(row);
   }
 
   async listConnections(orgId: string): Promise<SsoConnection[]> {
-    const { rows } = await this.db.query<SsoConnection>(
-      'SELECT * FROM core.sso_connections WHERE org_id = $1 ORDER BY created_at',
-      [orgId],
-    );
-    return rows;
+    const rows = await this.prisma.ssoConnection.findMany({
+      where: { orgId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(toApiConnection);
   }
 
   async deleteConnection(userId: string, connectionId: string): Promise<void> {
-    const { rows: conn } = await this.db.query<{ org_id: string }>(
-      'SELECT org_id FROM core.sso_connections WHERE id = $1',
-      [connectionId],
-    );
-    if (conn.length === 0) throw new NotFoundException('SSO connection not found');
+    const conn = await this.prisma.ssoConnection.findFirst({
+      where: { id: connectionId },
+      select: { orgId: true },
+    });
+    if (!conn) throw new NotFoundException('SSO connection not found');
 
-    const { rows: membership } = await this.db.query<{ role: string }>(
-      `SELECT role FROM core.memberships WHERE user_id = $1 AND org_id = $2`,
-      [userId, conn[0].org_id],
-    );
-    if (membership.length === 0 || !['owner', 'admin'].includes(membership[0].role)) {
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, orgId: conn.orgId },
+    });
+    if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');
     }
 
-    await this.db.query('DELETE FROM core.sso_connections WHERE id = $1', [connectionId]);
+    await this.prisma.ssoConnection.delete({ where: { id: connectionId } });
     this.logger.log(`SSO connection ${connectionId} deleted`);
   }
 }

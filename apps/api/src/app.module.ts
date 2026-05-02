@@ -6,6 +6,7 @@ import { AuthModule } from './auth';
 import { BootstrapModule } from './bootstrap';
 import { DatabaseModule } from './database';
 import { SsoModule } from './sso';
+import { DataSourcesModule } from './data-sources/data-sources.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -19,6 +20,7 @@ import { validate } from './config/env.validation';
     AuthModule,
     BootstrapModule,
     SsoModule,
+    DataSourcesModule,
   ],
   controllers: [AppController],
 })

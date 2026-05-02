@@ -2,13 +2,13 @@ import {
   Injectable,
   Logger,
   ConflictException,
-  NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database';
+import { OrgRole } from '../generated/prisma/client';
 import type { AuthUser } from '../auth';
+import { PrismaService } from '../database';
 
-interface BootstrapResult {
+export interface BootstrapResult {
   userId: string;
   email: string;
   orgId: string | null;
@@ -22,7 +22,7 @@ interface BootstrapResult {
 export class BootstrapService {
   private readonly logger = new Logger(BootstrapService.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async bootstrap(
     authUser: AuthUser,
@@ -31,108 +31,92 @@ export class BootstrapService {
     let isNewUser = false;
     let isNewOrg = false;
 
-    const { rows: existingUsers } = await this.db.query<{
-      id: string;
-    }>('SELECT id FROM core.users WHERE auth_user_id = $1', [
-      authUser.authUserId,
-    ]);
+    let user = await this.prisma.user.findFirst({
+      where: { authUserId: authUser.authUserId },
+    });
 
     let userId: string;
 
-    if (existingUsers.length > 0) {
-      userId = existingUsers[0].id;
+    if (user) {
+      userId = user.id;
     } else {
-      const { rows } = await this.db.query<{ id: string }>(
-        `INSERT INTO core.users (auth_user_id, email, display_name)
-         VALUES ($1, $2, $3)
-         RETURNING id`,
-        [authUser.authUserId, authUser.email, opts.displayName ?? null],
-      );
-      userId = rows[0].id;
+      user = await this.prisma.user.create({
+        data: {
+          authUserId: authUser.authUserId,
+          email: authUser.email,
+          displayName: opts.displayName ?? null,
+        },
+      });
+      userId = user.id;
       isNewUser = true;
       this.logger.log(`Bootstrapped new user ${userId} for ${authUser.email}`);
     }
 
-    const { rows: memberships } = await this.db.query<{
-      org_id: string;
-      slug: string;
-      role: string;
-    }>(
-      `SELECT m.org_id, o.slug, m.role
-       FROM core.memberships m
-       JOIN core.organizations o ON o.id = m.org_id
-       WHERE m.user_id = $1
-       ORDER BY m.created_at ASC
-       LIMIT 1`,
-      [userId],
-    );
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      include: { org: true },
+    });
 
-    if (memberships.length > 0) {
+    if (membership) {
       return {
         userId,
         email: authUser.email,
-        orgId: memberships[0].org_id,
-        orgSlug: memberships[0].slug,
-        role: memberships[0].role,
+        orgId: membership.orgId,
+        orgSlug: membership.org.slug,
+        role: membership.role,
         isNewUser,
         isNewOrg: false,
       };
     }
 
-    // Auto-join by email domain
     const emailDomain = authUser.email.split('@')[1];
-    const { rows: domainOrgs } = await this.db.query<{
-      id: string;
-      slug: string;
-    }>('SELECT id, slug FROM core.organizations WHERE domain = $1 LIMIT 1', [
-      emailDomain,
-    ]);
+    const domainOrg = emailDomain
+      ? await this.prisma.organization.findFirst({
+          where: { domain: emailDomain },
+        })
+      : null;
 
-    if (domainOrgs.length > 0) {
-      await this.db.query(
-        `INSERT INTO core.memberships (user_id, org_id, role)
-         VALUES ($1, $2, 'member')
-         ON CONFLICT (user_id, org_id) DO NOTHING`,
-        [userId, domainOrgs[0].id],
-      );
+    if (domainOrg) {
+      await this.prisma.membership.createMany({
+        data: [{ userId, orgId: domainOrg.id, role: OrgRole.member }],
+        skipDuplicates: true,
+      });
       return {
         userId,
         email: authUser.email,
-        orgId: domainOrgs[0].id,
-        orgSlug: domainOrgs[0].slug,
+        orgId: domainOrg.id,
+        orgSlug: domainOrg.slug,
         role: 'member',
         isNewUser,
         isNewOrg: false,
       };
     }
 
-    // Create a personal org if name/slug provided
     if (opts.orgName && opts.orgSlug) {
-      const { rows: existing } = await this.db.query(
-        'SELECT id FROM core.organizations WHERE slug = $1',
-        [opts.orgSlug],
-      );
-      if (existing.length > 0) {
+      const slugTaken = await this.prisma.organization.findFirst({
+        where: { slug: opts.orgSlug },
+        select: { id: true },
+      });
+      if (slugTaken) {
         throw new ConflictException(`Organization slug "${opts.orgSlug}" is taken`);
       }
 
-      const { rows: newOrg } = await this.db.query<{ id: string }>(
-        `INSERT INTO core.organizations (name, slug)
-         VALUES ($1, $2)
-         RETURNING id`,
-        [opts.orgName, opts.orgSlug],
-      );
-      await this.db.query(
-        `INSERT INTO core.memberships (user_id, org_id, role)
-         VALUES ($1, $2, 'owner')`,
-        [userId, newOrg[0].id],
-      );
+      const newOrg = await this.prisma.organization.create({
+        data: {
+          name: opts.orgName,
+          slug: opts.orgSlug,
+          memberships: {
+            create: { userId, role: OrgRole.owner },
+          },
+        },
+      });
       isNewOrg = true;
 
       return {
         userId,
         email: authUser.email,
-        orgId: newOrg[0].id,
+        orgId: newOrg.id,
         orgSlug: opts.orgSlug,
         role: 'owner',
         isNewUser,
@@ -155,43 +139,33 @@ export class BootstrapService {
     userId: string,
     orgId: string,
   ): Promise<{ orgId: string; orgSlug: string; role: string }> {
-    const { rows } = await this.db.query<{
-      org_id: string;
-      slug: string;
-      role: string;
-    }>(
-      `SELECT m.org_id, o.slug, m.role
-       FROM core.memberships m
-       JOIN core.organizations o ON o.id = m.org_id
-       WHERE m.user_id = $1 AND m.org_id = $2`,
-      [userId, orgId],
-    );
+    const membership = await this.prisma.membership.findFirst({
+      where: { userId, orgId },
+      include: { org: true },
+    });
 
-    if (rows.length === 0) {
+    if (!membership) {
       throw new ForbiddenException('Not a member of this organization');
     }
 
     return {
-      orgId: rows[0].org_id,
-      orgSlug: rows[0].slug,
-      role: rows[0].role,
+      orgId: membership.orgId,
+      orgSlug: membership.org.slug,
+      role: membership.role,
     };
   }
 
   async listOrgs(userId: string) {
-    const { rows } = await this.db.query<{
-      org_id: string;
-      name: string;
-      slug: string;
-      role: string;
-    }>(
-      `SELECT m.org_id, o.name, o.slug, m.role
-       FROM core.memberships m
-       JOIN core.organizations o ON o.id = m.org_id
-       WHERE m.user_id = $1
-       ORDER BY o.name`,
-      [userId],
-    );
-    return rows;
+    const rows = await this.prisma.membership.findMany({
+      where: { userId },
+      include: { org: true },
+      orderBy: { org: { name: 'asc' } },
+    });
+    return rows.map((m) => ({
+      org_id: m.orgId,
+      name: m.org.name,
+      slug: m.org.slug,
+      role: m.role,
+    }));
   }
 }
