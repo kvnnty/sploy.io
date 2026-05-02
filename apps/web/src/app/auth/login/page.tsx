@@ -1,43 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSignIn } from '@clerk/nextjs';
 import Logo from '@/components/shared/logo';
 
 export default function LoginPage() {
+  const { signIn } = useSignIn();
   const [email, setEmail] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
-
-  const redirectTo = typeof window !== 'undefined'
-    ? `${window.location.origin}/auth/callback`
-    : '';
-
-  async function signInWithOAuth(provider: 'google' | 'azure') {
+  async function signInWithOAuth(strategy: 'oauth_google' | 'oauth_microsoft') {
+    if (!signIn) return;
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo },
+    const { error } = await signIn.sso({
+      strategy,
+      redirectUrl: '/auth/sso-callback',
+      redirectCallbackUrl: '/dashboard',
     });
-    if (error) setError(error.message);
+    if (error) setError(error.errors?.[0]?.longMessage ?? error.errors?.[0]?.message ?? 'OAuth sign-in failed');
   }
 
   async function signInWithMagicLink(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !signIn) return;
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+
+    const { error } = await signIn.emailLink.sendLink({
+      emailAddress: email,
+      verificationUrl: `${protocol}//${host}/auth/verify`,
     });
 
     if (error) {
-      setError(error.message);
+      setError(error.errors?.[0]?.longMessage ?? error.errors?.[0]?.message ?? 'Failed to send magic link');
     } else {
       setMagicLinkSent(true);
     }
@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         <div className="space-y-3">
           <button
-            onClick={() => signInWithOAuth('google')}
+            onClick={() => signInWithOAuth('oauth_google')}
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ export default function LoginPage() {
           </button>
 
           <button
-            onClick={() => signInWithOAuth('azure')}
+            onClick={() => signInWithOAuth('oauth_microsoft')}
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
           >
             <svg className="h-5 w-5" viewBox="0 0 21 21">

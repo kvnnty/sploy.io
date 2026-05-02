@@ -1,31 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSignIn } from '@clerk/nextjs';
 
 export default function SSOPage() {
+  const { signIn } = useSignIn();
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClient();
-
   async function handleSSO(e: React.FormEvent) {
     e.preventDefault();
-    if (!domain) return;
+    if (!domain || !signIn) return;
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signInWithSSO({ domain });
+    const { error } = await signIn.sso({
+      strategy: 'enterprise_sso',
+      identifier: domain,
+      redirectUrl: '/auth/sso-callback',
+      redirectCallbackUrl: '/dashboard',
+    });
 
     if (error) {
-      setError(error.message);
+      setError(error.errors?.[0]?.longMessage ?? error.errors?.[0]?.message ?? 'SSO sign-in failed');
       setLoading(false);
-      return;
-    }
-
-    if (data?.url) {
-      window.location.href = data.url;
     }
   }
 

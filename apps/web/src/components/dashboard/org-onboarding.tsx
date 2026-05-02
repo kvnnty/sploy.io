@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -12,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { apiFetch } from '@/lib/api';
+import { apiFetchWithToken } from '@/lib/api';
 
 function slugify(name: string): string {
   const s = name
@@ -24,6 +25,7 @@ function slugify(name: string): string {
 }
 
 export function OrgOnboarding({ email }: { email: string }) {
+  const { getToken } = useAuth();
   const router = useRouter();
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
@@ -47,7 +49,9 @@ export function OrgOnboarding({ email }: { email: string }) {
     }
     setLoading(true);
     try {
-      await apiFetch('/auth/bootstrap', {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await apiFetchWithToken('/auth/bootstrap', token, {
         method: 'POST',
         body: JSON.stringify({
           displayName: email.split('@')[0],

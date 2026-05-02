@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/client';
-
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api';
 
 export type AuthMeResponse = {
@@ -59,16 +57,14 @@ export async function apiFetchServer<T = unknown>(
   return JSON.parse(text) as T;
 }
 
-export async function apiFetch<T = unknown>(
+/**
+ * Client-side API fetch. Import `useAuth` from `@clerk/nextjs` and pass the
+ * token: `const { getToken } = useAuth(); const token = await getToken();`
+ */
+export async function apiFetchWithToken<T = unknown>(
   path: string,
+  token: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error('Not authenticated');
-  }
-
-  return apiFetchServer<T>(path, session.access_token, options);
+  return apiFetchServer<T>(path, token, options);
 }

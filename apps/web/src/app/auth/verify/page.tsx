@@ -1,32 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useClerk } from '@clerk/nextjs';
 
 export default function VerifyPage() {
+  const { handleEmailLinkVerification } = useClerk();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
-  const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        setStatus('success');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1500);
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      if (status === 'verifying') setStatus('error');
-    }, 30000);
-
-    return () => clearTimeout(timeout);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    handleEmailLinkVerification({
+      redirectUrlComplete: '/dashboard',
+    })
+      .then(() => setStatus('success'))
+      .catch(() => setStatus('error'));
+  }, [handleEmailLinkVerification]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="mx-auto w-full max-w-sm space-y-6">
+      <div className="mx-auto w-full max-w-sm space-y-6 text-center">
         {status === 'verifying' && (
           <>
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
@@ -45,7 +36,7 @@ export default function VerifyPage() {
         )}
         {status === 'error' && (
           <>
-            <p className="text-sm text-red-400">Verification timed out or failed.</p>
+            <p className="text-sm text-red-400">Verification failed or the link has expired.</p>
             <a href="/auth/login" className="text-sm text-white/50 hover:text-white/70">
               Try again
             </a>

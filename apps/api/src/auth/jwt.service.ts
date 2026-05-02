@@ -1,27 +1,31 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as jose from 'jose';
+import { verifyToken } from '@clerk/backend';
 import type { AuthUser } from './interfaces/auth-user.interface';
 
 @Injectable()
 export class JwtService {
-  private jwks!: ReturnType<typeof jose.createRemoteJWKSet>;
   private readonly logger = new Logger(JwtService.name);
+  private readonly secretKey: string;
+  private readonly authorizedParties: string[];
 
   constructor(private readonly config: ConfigService) {
-    const jwksUrl = this.config.getOrThrow<string>('SUPABASE_JWKS_URL');
-    this.jwks = jose.createRemoteJWKSet(new URL(jwksUrl));
+    this.secretKey = this.config.getOrThrow<string>('CLERK_SECRET_KEY');
+    this.authorizedParties = this.config
+      .getOrThrow<string>('CORS_ORIGIN')
+      .split(',')
+      .map((o) => o.trim());
   }
 
-  async verifyToken(token: string): Promise<AuthUser> {
+  async verify(token: string): Promise<AuthUser> {
     try {
-      const { payload } = await jose.jwtVerify(token, this.jwks, {
-        issuer: this.config.getOrThrow<string>('SUPABASE_URL') + '/auth/v1',
-        audience: 'authenticated',
+      const payload = await verifyToken(token, {
+        secretKey: this.secretKey,
+        authorizedParties: this.authorizedParties,
       });
 
       const sub = payload.sub;
-      const email = payload.email as string | undefined;
+      const email = (payload as Record<string, unknown>).email as string | undefined;
 
       if (!sub || !email) {
         throw new UnauthorizedException('Token missing required claims');
