@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import Logo from '@/components/shared/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -50,8 +51,8 @@ function NavLinks({
             className={cn(
               'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
               active
-                ? 'bg-white/10 text-foreground'
-                : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
             )}
           >
             <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
@@ -80,7 +81,7 @@ export function DashboardShell({
 }) {
   return (
     <div className="flex min-h-screen w-full flex-1">
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-white/10 bg-card/80 py-4 backdrop-blur-md md:flex">
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card/80 py-4 backdrop-blur-md md:flex">
         <div className="px-3 pb-4">
           <Logo />
         </div>
@@ -91,13 +92,14 @@ export function DashboardShell({
           <OrgSwitcher orgs={orgs} activeOrgId={activeOrgId} />
         </div>
         <NavLinks className="flex-1 px-2" />
-        <div className="mt-auto space-y-2 border-t border-white/10 px-3 pt-4">
+        <div className="mt-auto space-y-2 border-t border-border px-3 pt-4">
+          <ThemeToggle className="flex w-full justify-center" />
           <p className="truncate px-1 text-xs text-muted-foreground" title={userEmail}>
             {userEmail}
           </p>
           <Link
             href="/logout"
-            className="block rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+            className="block rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
           >
             Sign out
           </Link>
@@ -105,16 +107,16 @@ export function DashboardShell({
       </aside>
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-white/10 bg-background/90 px-4 py-3 backdrop-blur-md md:hidden">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-border bg-background/90 px-4 py-3 backdrop-blur-md md:hidden">
           <Sheet>
             <SheetTrigger
-              render={<Button variant="outline" size="icon" className="border-white/10 bg-white/5" />}
+              render={<Button variant="outline" size="icon" className="border-border bg-muted/40" />}
             >
               <MenuIcon className="size-4" />
               <span className="sr-only">Open menu</span>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[min(100%,280px)] border-white/10 bg-card p-0">
-              <SheetHeader className="border-b border-white/10 p-4 text-left">
+            <SheetContent side="left" className="w-[min(100%,280px)] border-border bg-card p-0">
+              <SheetHeader className="border-b border-border p-4 text-left">
                 <SheetTitle className="sr-only">Navigation</SheetTitle>
                 <Logo />
               </SheetHeader>
@@ -125,7 +127,8 @@ export function DashboardShell({
                 <OrgSwitcher orgs={orgs} activeOrgId={activeOrgId} />
               </div>
               <NavLinks className="px-2 pb-4" />
-              <div className="mt-auto border-t border-white/10 p-4">
+              <div className="mt-auto space-y-3 border-t border-border p-4">
+                <ThemeToggle className="flex w-full justify-center" />
                 <p className="mb-2 truncate text-xs text-muted-foreground">{userEmail}</p>
                 <Link
                   href="/logout"

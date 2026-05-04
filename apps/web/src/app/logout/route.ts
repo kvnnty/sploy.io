@@ -1,9 +1,14 @@
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { sessionId } = await auth();
+
+  if (sessionId) {
+    const client = await clerkClient();
+    await client.sessions.revokeSession(sessionId);
+  }
+
   return NextResponse.redirect(`${origin}/auth/login`);
 }

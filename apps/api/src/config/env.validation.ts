@@ -15,14 +15,8 @@ export class EnvironmentVariables {
   @IsString()
   CORS_ORIGIN: string = 'http://localhost:3000';
 
-  @IsUrl({ require_tld: false })
-  SUPABASE_URL!: string;
-
   @IsString()
-  SUPABASE_JWT_SECRET!: string;
-
-  @IsUrl({ require_tld: false })
-  SUPABASE_JWKS_URL!: string;
+  CLERK_SECRET_KEY!: string;
 
   @IsString()
   DATABASE_URL!: string;

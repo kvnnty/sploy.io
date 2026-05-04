@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -12,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { apiFetch } from '@/lib/api';
+import { apiFetchWithToken } from '@/lib/api';
 
 function slugify(name: string): string {
   const s = name
@@ -24,6 +25,7 @@ function slugify(name: string): string {
 }
 
 export function OrgOnboarding({ email }: { email: string }) {
+  const { getToken } = useAuth();
   const router = useRouter();
   const [orgName, setOrgName] = useState('');
   const [orgSlug, setOrgSlug] = useState('');
@@ -47,7 +49,9 @@ export function OrgOnboarding({ email }: { email: string }) {
     }
     setLoading(true);
     try {
-      await apiFetch('/auth/bootstrap', {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await apiFetchWithToken('/auth/bootstrap', token, {
         method: 'POST',
         body: JSON.stringify({
           displayName: email.split('@')[0],
@@ -64,7 +68,7 @@ export function OrgOnboarding({ email }: { email: string }) {
   }
 
   return (
-    <Card className="max-w-md border-white/10 bg-white/3 ring-white/10">
+    <Card className="max-w-md border-border bg-card/80 ring-border">
       <CardHeader>
         <CardTitle>Set up your workspace</CardTitle>
         <CardDescription>
@@ -88,7 +92,7 @@ export function OrgOnboarding({ email }: { email: string }) {
               value={orgName}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder="Acme Inc."
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
             />
           </div>
           <div className="space-y-1.5">
@@ -103,11 +107,11 @@ export function OrgOnboarding({ email }: { email: string }) {
                 setOrgSlug(e.target.value.toLowerCase());
               }}
               placeholder="acme-inc"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
             />
           </div>
         </CardContent>
-        <CardFooter className="border-white/10">
+        <CardFooter className="border-border">
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Creating…' : 'Continue'}
           </Button>

@@ -55,10 +55,10 @@ export default function People({
       animate={controls}
       transition={{ duration: 0.6 }}
     >
-      <motion.div className="text-[13px] font-medium tracking-[0.02em] text-[#6a6b6c]">
+      <motion.div className="text-[13px] font-medium tracking-[0.02em] text-muted-foreground">
         Join{" "}
         <motion.span
-          className="font-semibold text-[#9c9c9d]"
+          className="font-semibold text-muted-foreground"
           key={displayCount}
           initial={{ opacity: 0.5, y: 5 }}
           animate={{ opacity: 1, y: 0 }}

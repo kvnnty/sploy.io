@@ -13,7 +13,7 @@
   --color-raycast-red: #ff6363;
   --color-raycast-blue: #55b3ff;
   --color-raycast-green: #5fc992;
-  --color-surface-elevated: #1b1c1e;
+  --color-surface-elevated: var(--surface-elevated);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,14 +53,53 @@
 }
 
 :root {
+  color-scheme: light;
+  --surface-elevated: #ebebed;
+  --background: #fafafa;
+  --foreground: #0c0d0f;
+  --card: #ffffff;
+  --card-foreground: #0c0d0f;
+  --popover: #ffffff;
+  --popover-foreground: #0c0d0f;
+  --primary: #e5ff00;
+  --primary-foreground: #0c0d0f;
+  --secondary: #f0f1f3;
+  --secondary-foreground: #18191a;
+  --muted: #f0f1f3;
+  --muted-foreground: #65666b;
+  --accent: hsl(202 100% 94%);
+  --accent-foreground: hsl(202 100% 34%);
+  --destructive: #e5484d;
+  --border: hsl(220 9% 88%);
+  --input: hsl(220 9% 88%);
+  --ring: hsl(202 100% 50% / 0.35);
+  --chart-1: #1d8ae6;
+  --chart-2: #2ea66a;
+  --chart-3: #d97706;
+  --chart-4: #71717a;
+  --chart-5: #a1a1aa;
+  --radius: 0.75rem;
+  --sidebar: #f5f5f7;
+  --sidebar-foreground: #0c0d0f;
+  --sidebar-primary: hsl(202 100% 42%);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebebed;
+  --sidebar-accent-foreground: #0c0d0f;
+  --sidebar-border: hsl(220 9% 88%);
+  --sidebar-ring: hsl(202 100% 50% / 0.35);
+}
+
+.dark {
+  color-scheme: dark;
+  --surface-elevated: #1b1c1e;
   --background: #07080a;
   --foreground: #f9f9f9;
   --card: #101111;
   --card-foreground: #f9f9f9;
   --popover: #101111;
   --popover-foreground: #f9f9f9;
-  --primary: hsl(0 0% 100% / 0.815);
-  --primary-foreground: #18191a;
+  --primary: #e5ff00;
+  --primary-foreground: #0c0d0f;
   --secondary: #1b1c1e;
   --secondary-foreground: #f9f9f9;
   --muted: #1b1c1e;
@@ -76,7 +115,6 @@
   --chart-3: #ffbc33;
   --chart-4: #9c9c9d;
   --chart-5: #434345;
-  --radius: 0.75rem;
   --sidebar: #101111;
   --sidebar-foreground: #f9f9f9;
   --sidebar-primary: #55b3ff;
@@ -86,8 +124,6 @@
   --sidebar-border: hsl(195 5% 15%);
   --sidebar-ring: hsl(202 100% 67% / 0.35);
 }
-
-.dark {}
 
 @layer base {
   * {
@@ -119,8 +155,8 @@
 @utility raycast-glow-warm {
   box-shadow:
     0 0 20px 5px rgba(215, 201, 175, 0.05),
-    rgb(27, 28, 30) 0 0 0 1px,
-    rgb(7, 8, 10) 0 0 0 1px inset;
+    var(--color-border) 0 0 0 1px,
+    var(--color-background) 0 0 0 1px inset;
 }
 
 @utility raycast-hero-stripes {

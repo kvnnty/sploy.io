@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 import {
   apiFetchServer,
@@ -8,7 +9,6 @@ import {
   type OrgMembership,
 } from '@/lib/api';
 import { ACTIVE_ORG_COOKIE } from '@/lib/dashboard-constants';
-import { createClient } from '@/lib/supabase/server';
 
 function pickOrgId(
   me: AuthMeResponse,
@@ -32,20 +32,16 @@ export type DashboardLoadResult = {
 };
 
 export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) redirect('/auth/login');
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) redirect('/auth/login');
+  const { getToken } = await auth();
+  const accessToken = await getToken();
+  if (!accessToken) redirect('/auth/login');
 
   let me: AuthMeResponse = {
     authUserId: user.id,
-    email: user.email ?? '',
+    email: user.emailAddresses[0]?.emailAddress ?? '',
     internalUserId: null,
     activeOrgId: null,
     role: null,
@@ -54,13 +50,13 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
   let apiAvailable = false;
 
   try {
-    me = await apiFetchServer<AuthMeResponse>('/auth/me', session.access_token);
+    me = await apiFetchServer<AuthMeResponse>('/auth/me', accessToken);
     apiAvailable = true;
     if (me.internalUserId) {
       try {
         orgs = await apiFetchServer<OrgMembership[]>(
           '/auth/orgs',
-          session.access_token,
+          accessToken,
         );
       } catch {
         orgs = [];
@@ -75,8 +71,8 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
   const activeOrgId = pickOrgId(me, orgs, cookieOrg);
 
   return {
-    user: { id: user.id, email: user.email },
-    accessToken: session.access_token,
+    user: { id: user.id, email: user.emailAddresses[0]?.emailAddress },
+    accessToken,
     me,
     orgs,
     activeOrgId,

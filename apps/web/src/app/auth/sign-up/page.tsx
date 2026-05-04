@@ -2,52 +2,67 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useSignIn } from '@clerk/nextjs';
+import { useClerk, useSignUp } from '@clerk/nextjs';
 import { OAuthLastUsedBadge } from '@/components/auth/oauth-last-used-badge';
 import Logo from '@/components/shared/logo';
 import { formatClerkError } from '@/lib/clerk-errors';
 import { useLastOAuthStrategy, type OAuthStrategy } from '@/lib/last-oauth-strategy';
 
-export default function LoginPage() {
-  const { signIn } = useSignIn();
+export default function SignUpPage() {
+  const { loaded: clerkLoaded } = useClerk();
+  const { signUp } = useSignUp();
   const { lastStrategy, rememberStrategy } = useLastOAuthStrategy();
   const [email, setEmail] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function signInWithOAuth(strategy: OAuthStrategy) {
-    if (!signIn) return;
+  async function signUpWithOAuth(strategy: OAuthStrategy) {
+    if (!signUp) return;
     rememberStrategy(strategy);
     setError(null);
-    const { error } = await signIn.sso({
+    const { error: err } = await signUp.sso({
       strategy,
       redirectUrl: '/auth/sso-callback',
       redirectCallbackUrl: '/dashboard',
     });
-    if (error) setError(formatClerkError(error));
+    if (err) setError(formatClerkError(err));
   }
 
-  async function signInWithMagicLink(e: React.FormEvent) {
+  async function signUpWithMagicLink(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !signIn) return;
+    if (!email || !signUp) return;
     setLoading(true);
     setError(null);
+
+    const { error: createError } = await signUp.create({ emailAddress: email });
+    if (createError) {
+      setError(formatClerkError(createError));
+      setLoading(false);
+      return;
+    }
 
     const protocol = window.location.protocol;
     const host = window.location.host;
 
-    const { error } = await signIn.emailLink.sendLink({
-      emailAddress: email,
-      verificationUrl: `${protocol}//${host}/auth/verify`,
+    const { error: sendError } = await signUp.verifications.sendEmailLink({
+      verificationUrl: `${protocol}//${host}/auth/verify-signup`,
     });
 
-    if (error) {
-      setError(formatClerkError(error));
+    if (sendError) {
+      setError(formatClerkError(sendError));
     } else {
       setMagicLinkSent(true);
     }
     setLoading(false);
+  }
+
+  if (!clerkLoaded || !signUp) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+      </div>
+    );
   }
 
   if (magicLinkSent) {
@@ -59,11 +74,14 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-foreground text-center">Check your email</h2>
-          <p className="text-sm text-foreground/60 text-center">
-            We sent a magic link to <strong className="text-foreground">{email}</strong>.
-            Click the link to sign in.
+          <h2 className="text-center text-xl font-semibold text-foreground">Check your email</h2>
+          <p className="text-center text-sm text-muted-foreground">
+            We sent a verification link to <strong className="text-foreground">{email}</strong>.
+            Open it to finish creating your account.
           </p>
+          <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground">
+            Back to sign in
+          </Link>
         </div>
       </div>
     );
@@ -74,7 +92,7 @@ export default function LoginPage() {
       <div className="mx-auto w-full max-w-sm space-y-6">
         <div className="text-center flex flex-col items-center justify-center gap-5">
           <Logo />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Sign in to your account</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
         </div>
 
         {error && (
@@ -86,7 +104,7 @@ export default function LoginPage() {
         <div className="space-y-3">
           <button
             type="button"
-            onClick={() => signInWithOAuth('oauth_google')}
+            onClick={() => signUpWithOAuth('oauth_google')}
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
@@ -103,7 +121,7 @@ export default function LoginPage() {
 
           <button
             type="button"
-            onClick={() => signInWithOAuth('oauth_microsoft')}
+            onClick={() => signUpWithOAuth('oauth_microsoft')}
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
@@ -128,7 +146,8 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <form onSubmit={signInWithMagicLink} className="space-y-3">
+        <form onSubmit={signUpWithMagicLink} className="space-y-3">
+          <div id="clerk-captcha" />
           <input
             type="email"
             placeholder="you@company.com"
@@ -142,7 +161,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? 'Sending...' : 'Send magic link'}
+            {loading ? 'Sending...' : 'Send verification link'}
           </button>
         </form>
 
@@ -159,13 +178,13 @@ export default function LoginPage() {
           href="/auth/sso"
           className="flex w-full items-center justify-center rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
         >
-          Sign in with SSO
+          Sign up with SSO
         </Link>
 
-        <p className="text-center text-sm text-foreground/50">
-          New here?{' '}
-          <Link href="/auth/sign-up" className="text-foreground hover:text-foreground/80 underline-offset-4 hover:underline">
-            Create an account
+        <p className="text-center text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <Link href="/auth/login" className="text-foreground hover:text-foreground/80 underline-offset-4 hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
