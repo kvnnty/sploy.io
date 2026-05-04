@@ -29,7 +29,7 @@ export default async function AskPage() {
       </div>
 
       {!canAsk ? (
-        <Card className="border-white/10 bg-white/3 ring-white/10">
+        <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
             <CardTitle className="text-base">Almost there</CardTitle>
             <CardDescription>
@@ -40,7 +40,7 @@ export default async function AskPage() {
           </CardHeader>
         </Card>
       ) : (
-        <Card className="border-dashed border-white/15 bg-white/2 ring-white/10">
+        <Card className="border-dashed border-border bg-muted/20 ring-border">
           <CardHeader>
             <CardTitle className="text-base">Question composer</CardTitle>
             <CardDescription>
@@ -50,7 +50,7 @@ export default async function AskPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border border-white/10 bg-black/20 p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border border-border bg-muted/50 p-6 text-center text-sm text-muted-foreground">
               Placeholder UI — wire to Ask endpoint after selecting a data source.
             </div>
           </CardContent>

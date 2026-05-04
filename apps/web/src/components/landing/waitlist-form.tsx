@@ -143,7 +143,7 @@ export function WaitlistForm({ onSuccessChange }: FormProps) {
             <button
               type="button"
               onClick={copyLink}
-              className="px-4 py-2 bg-[#e5ff00] text-black rounded-lg font-medium hover:bg-opacity-90"
+              className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90"
             >
               Copy
             </button>
@@ -177,14 +177,14 @@ export function WaitlistForm({ onSuccessChange }: FormProps) {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="Email"
-                  className="flex-grow bg-background border border-border text-foreground px-4 py-3 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#e5ff00] focus:ring-offset-2"
+                  className="grow rounded-[12px] border border-border bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   disabled={loading}
                   required
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="absolute right-2 top-2 bottom-2 bg-[#e5ff00] text-black px-5 py-2 rounded-[12px] font-semibold hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center"
+                  className="absolute top-2 right-2 bottom-2 flex items-center justify-center rounded-[12px] bg-primary px-5 py-2 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   Continue
                 </button>
@@ -208,12 +208,12 @@ export function WaitlistForm({ onSuccessChange }: FormProps) {
                   onChange={handleChange}
                   placeholder="Name (optional)"
                   disabled={loading}
-                  className="w-full bg-background border border-border text-foreground px-4 py-3 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-[#e5ff00] focus:ring-offset-2"
+                  className="w-full rounded-[12px] border border-border bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#e5ff00] text-black py-3 rounded-[12px] font-semibold hover:bg-opacity-90 disabled:opacity-50 flex items-center justify-center"
+                  className="flex w-full items-center justify-center rounded-[12px] bg-primary py-3 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   {loading ? (
                     <>

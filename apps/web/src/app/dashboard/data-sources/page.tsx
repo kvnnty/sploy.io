@@ -45,7 +45,7 @@ export default async function DataSourcesPage() {
       </div>
 
       {!apiAvailable ? (
-        <Card className="border-white/10 bg-white/3 ring-white/10">
+        <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
             <CardTitle className="text-base">API unavailable</CardTitle>
             <CardDescription>
@@ -56,7 +56,7 @@ export default async function DataSourcesPage() {
       ) : null}
 
       {apiAvailable && !me.internalUserId ? (
-        <Card className="border-white/10 bg-white/3 ring-white/10">
+        <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
             <CardTitle className="text-base">Finish setup</CardTitle>
             <CardDescription>
@@ -67,7 +67,7 @@ export default async function DataSourcesPage() {
       ) : null}
 
       {apiAvailable && me.internalUserId && !orgs.length ? (
-        <Card className="border-white/10 bg-white/3 ring-white/10">
+        <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
             <CardTitle className="text-base">No organization</CardTitle>
             <CardDescription>
@@ -85,7 +85,7 @@ export default async function DataSourcesPage() {
 
       {apiAvailable && activeOrgId && me.internalUserId && !loadError ? (
         sources.length === 0 ? (
-          <Card className="border-dashed border-white/15 bg-transparent ring-white/10">
+          <Card className="border-dashed border-border bg-transparent ring-border">
             <CardHeader>
               <CardTitle className="text-base">No sources yet</CardTitle>
               <CardDescription>
@@ -99,7 +99,7 @@ export default async function DataSourcesPage() {
             {sources.map((s) => (
               <Card
                 key={s.id}
-                className="border-white/10 bg-white/3 ring-white/10"
+                className="border-border bg-muted/30 ring-border"
                 size="sm"
               >
                 <CardHeader className="flex-row items-start justify-between gap-2">
@@ -109,7 +109,7 @@ export default async function DataSourcesPage() {
                       {s.host}:{s.port}/{s.database}
                     </CardDescription>
                   </div>
-                  <Badge variant="outline" className="shrink-0 border-white/15 capitalize">
+                  <Badge variant="outline" className="shrink-0 border-border capitalize">
                     {s.kind}
                   </Badge>
                 </CardHeader>

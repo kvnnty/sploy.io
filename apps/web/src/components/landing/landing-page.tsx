@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import Countdown from "./countdown";
 import People from "./people";
 import { WaitlistForm } from "./waitlist-form";
@@ -18,7 +19,7 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden
       >   
-        <div className="absolute inset-0 opacity-[0.1] [background-image:radial-gradient(rgba(255,255,255)_0.7px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(rgba(0,0,0,0.22)_1px,transparent_1px)] [background-size:20px_20px] dark:opacity-[0.1] dark:[background-image:radial-gradient(rgba(255,255,255,0.7)_0.7px,transparent_1px)]" />
       </div>
 
       <div className="flex w-full max-w-2xl flex-1 self-center flex-col items-center justify-center gap-6">
@@ -27,20 +28,20 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         </div>
 
         <div className="flex max-w-2xl flex-col items-center justify-center gap-4">
-          <div className="relative flex items-center gap-4 rounded-full border border-white/10 px-4 py-1">
+          <div className="relative flex items-center gap-4 rounded-full border border-border px-4 py-1">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-lime-400" />
             </span>
-            <p className="text-xs font-medium uppercase text-[#cfcfd0]">Launching soon</p>
+            <p className="text-xs font-medium uppercase text-muted-foreground">Launching soon</p>
           </div>
           <h1
-            className="text-balance text-center text-4xl font-bold text-[#f9f9f9]"
+            className="text-balance text-center text-4xl font-bold text-foreground"
             style={{ fontFeatureSettings: '"liga" 0, "ss02" 1, "ss08" 1' }}
           >
             {isSuccess ? "You're on the waitlist" : "Get early Access"}
           </h1>
-          <p className="max-w-xl text-center text-base text-[#9c9c9d]">
+          <p className="max-w-xl text-center text-base text-muted-foreground">
             {isSuccess
               ? "You secured your spot. We will reach out as soon as your invite is ready."
               : "Stop waiting on dashboards and backlogged analysts.\nGet the why behind every metric and the exact next move in seconds."}
@@ -57,31 +58,32 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         <Countdown period={new Date("2026-07-01")} />
       </div>
 
-      <footer className="mx-auto mt-14 w-full max-w-5xl border-t border-white/10 pt-6">
-        <div className="flex flex-col items-center justify-between gap-3 text-xs text-[#8a8b8d] sm:flex-row">
+      <footer className="mx-auto mt-14 w-full max-w-5xl border-t border-border pt-6">
+        <div className="flex flex-col items-center justify-between gap-4 text-xs text-muted-foreground sm:flex-row">
           <p className="tracking-[0.02em]">© {year} Sploy. All rights reserved.</p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+            <ThemeToggle />
             <Link
               href="#"
-              className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
+              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
             >
               Privacy
             </Link>
             <Link
               href="#"
-              className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
+              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
             >
               Terms
             </Link>
             <Link
               href="mailto:hello@kvnn.guru"
-              className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
+              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
             >
               Contact
             </Link>
             <Link
               href="/auth/login"
-              className="transition-colors hover:text-[#d5d5d6] focus-visible:outline-none focus-visible:text-[#d5d5d6]"
+              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
             >
               Join beta
             </Link>

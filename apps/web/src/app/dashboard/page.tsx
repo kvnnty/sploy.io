@@ -35,7 +35,7 @@ export default async function DashboardPage() {
       </div>
 
       {!apiAvailable ? (
-        <Card className="border-white/10 bg-white/3 ring-white/10">
+        <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
             <CardTitle>Connect the API</CardTitle>
             <CardDescription>
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
       {ready ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Card className="border-white/10 bg-white/3 ring-white/10">
+          <Card className="border-border bg-muted/30 ring-border">
             <CardHeader>
               <CardTitle className="text-base">Data sources</CardTitle>
               <CardDescription>
@@ -71,13 +71,13 @@ export default async function DashboardPage() {
             <CardContent>
               <Link
                 href="/dashboard/data-sources"
-                className={cn(buttonVariants({ variant: 'outline' }), 'border-white/15')}
+                className={cn(buttonVariants({ variant: 'outline' }), 'border-border')}
               >
                 Manage sources
               </Link>
             </CardContent>
           </Card>
-          <Card className="border-white/10 bg-white/3 ring-white/10">
+          <Card className="border-border bg-muted/30 ring-border">
             <CardHeader>
               <CardTitle className="text-base">Ask a question</CardTitle>
               <CardDescription>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
             <CardContent>
               <Link
                 href="/dashboard/ask"
-                className={cn(buttonVariants({ variant: 'outline' }), 'border-white/15')}
+                className={cn(buttonVariants({ variant: 'outline' }), 'border-border')}
               >
                 Open Ask
               </Link>
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
       ) : null}
 
       {ready ? (
-        <Card className="border-dashed border-white/15 bg-transparent ring-white/10">
+        <Card className="border-dashed border-border bg-transparent ring-border">
           <CardHeader>
             <CardTitle className="text-base text-muted-foreground">Coming next</CardTitle>
             <CardDescription>

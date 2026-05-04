@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist_Mono, Inter } from "next/font/google";
-import { Toaster } from "sonner";
+import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,13 +30,15 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
+      <html lang="en" suppressHydrationWarning>
         <body
           className={`${inter.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground overflow-x-hidden`}
         >
-          <Toaster theme="dark" />
-          {children}
-          <Analytics />
+          <ThemeProvider>
+            <ThemeAwareToaster />
+            {children}
+            <Analytics />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
