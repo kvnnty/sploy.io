@@ -87,7 +87,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_google')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_microsoft')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 21 21">
