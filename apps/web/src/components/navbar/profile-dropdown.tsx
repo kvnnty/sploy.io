@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@clerk/nextjs';
 import { LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -29,9 +30,11 @@ export function ProfileDropdown({
   name: string;
   email: string;
 }) {
+  const { user } = useUser();
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const initials = useMemo(() => initialsFor(name, email), [name, email]);
+  const avatarUrl = user?.imageUrl ?? null;
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -52,17 +55,33 @@ export function ProfileDropdown({
         className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Open account menu"
       >
-        <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-          {initials}
-        </span>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border"
+          />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+            {initials}
+          </span>
+        )}
         <span className="hidden text-sm text-foreground md:block">{name || email}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={6} className="w-72 min-w-72 p-2">
         <div className="mb-2 rounded-lg border border-border bg-muted/40 p-3">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-              {initials}
-            </span>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border"
+              />
+            ) : (
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                {initials}
+              </span>
+            )}
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{name || 'User'}</p>
               <p className="truncate text-xs text-muted-foreground">{email}</p>

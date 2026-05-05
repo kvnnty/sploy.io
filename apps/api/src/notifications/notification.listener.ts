@@ -9,6 +9,7 @@ import {
   type NewSessionEvent,
   type TeamInviteEvent,
   type InviteAcceptedEvent,
+  type InviteDeclinedEvent,
   type RoleChangedEvent,
   type MemberRemovedEvent,
 } from './events';
@@ -94,6 +95,31 @@ export class NotificationListener {
       }
     } catch (err) {
       this.logger.error(`Failed to handle invite accepted event: ${err}`);
+    }
+  }
+
+  @OnEvent(NOTIFICATION_EVENTS.INVITE_DECLINED, { async: true })
+  async handleInviteDeclined(event: InviteDeclinedEvent) {
+    try {
+      const team = await this.prisma.team.findFirst({
+        where: { id: event.teamId },
+        select: { name: true },
+      });
+      const notification = await this.notifications.createIfEnabled({
+        userId: event.userId,
+        category: NotificationCategory.team_collaboration,
+        type: 'invite_declined',
+        title: 'Invite declined',
+        body: `${event.declinerName ?? 'A user'} declined your invitation to ${team?.name ?? 'the team'}`,
+        actionUrl: '/dashboard/settings/team',
+        idempotencyKey: `invite_declined:${event.invitationId}`,
+        metadata: { teamId: event.teamId },
+      });
+      if (notification) {
+        await this.pushToUser(event.userId);
+      }
+    } catch (err) {
+      this.logger.error(`Failed to handle invite declined event: ${err}`);
     }
   }
 

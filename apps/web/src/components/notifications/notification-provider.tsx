@@ -9,11 +9,13 @@ import {
   useState,
 } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createNotificationStream,
   fetchUnreadCount,
   type NotificationItem,
 } from '@/lib/notifications';
+import { queryKeys } from '@/lib/query-keys';
 
 interface NotificationContextValue {
   unreadCount: number;
@@ -37,25 +39,25 @@ export function NotificationProvider({
   children: React.ReactNode;
 }) {
   const { getToken } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
   const [latestNotification, setLatestNotification] =
     useState<NotificationItem | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const refreshCount = useCallback(async () => {
-    try {
+  const { data: unreadData } = useQuery({
+    queryKey: queryKeys.notifications.unreadCount(),
+    queryFn: async () => {
       const token = await getToken();
-      if (!token) return;
-      const { count } = await fetchUnreadCount(token);
-      setUnreadCount(count);
-    } catch {
-      // silently ignore
-    }
-  }, [getToken]);
+      if (!token) return { count: 0 };
+      return fetchUnreadCount(token);
+    },
+  });
 
-  useEffect(() => {
-    refreshCount();
-  }, [refreshCount]);
+  const refreshCount = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.notifications.unreadCount(),
+    });
+  }, [queryClient]);
 
   useEffect(() => {
     let mounted = true;
@@ -70,10 +72,15 @@ export function NotificationProvider({
           if (!mounted) return;
           if (event.type === 'unread_count') {
             const payload = event.payload as { count: number };
-            setUnreadCount(payload.count);
+            queryClient.setQueryData(queryKeys.notifications.unreadCount(), {
+              count: payload.count,
+            });
           }
           if (event.type === 'notification') {
             setLatestNotification(event.payload as NotificationItem);
+            void queryClient.invalidateQueries({
+              queryKey: queryKeys.notifications.root,
+            });
           }
         },
         () => {
@@ -89,7 +96,9 @@ export function NotificationProvider({
       mounted = false;
       controllerRef.current?.abort();
     };
-  }, [getToken]);
+  }, [getToken, queryClient]);
+
+  const unreadCount = unreadData?.count ?? 0;
 
   return (
     <NotificationContext.Provider

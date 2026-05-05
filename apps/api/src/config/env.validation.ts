@@ -29,6 +29,35 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   OPENAI_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  MINIO_ENDPOINT?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  MINIO_PORT?: number;
+
+  @IsOptional()
+  @IsString()
+  MINIO_ACCESS_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  MINIO_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  MINIO_BUCKET?: string;
+
+  @IsOptional()
+  @IsString()
+  MINIO_USE_SSL?: string;
+
+  @IsOptional()
+  @IsString()
+  MINIO_PUBLIC_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

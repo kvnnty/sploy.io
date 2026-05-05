@@ -1,0 +1,15 @@
+model TeamActivity {
+  id          String   @id @default(uuid()) @db.Uuid
+  teamId      String   @map("team_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  type        String   @db.VarChar(50)
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  actor User? @relation("TeamActivityActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([teamId, createdAt(sort: Desc)], map: "idx_team_activity_team_created")
+  @@map("team_activities")
+  @@schema("core")
+}

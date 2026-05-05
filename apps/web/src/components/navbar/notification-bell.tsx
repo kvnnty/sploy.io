@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, ExternalLink } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -18,6 +19,7 @@ import {
   markNotificationRead,
   type NotificationItem,
 } from '@/lib/notifications';
+import { queryKeys } from '@/lib/query-keys';
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor(
@@ -36,49 +38,59 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
   const { getToken } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { unreadCount, refreshCount } = useNotifications();
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const loadItems = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data, isPending, isFetching } = useQuery({
+    queryKey: queryKeys.notifications.preview(),
+    queryFn: async () => {
       const token = await getToken();
-      if (!token) return;
-      const data = await fetchNotifications(token, { limit: 8 });
-      setItems(data.items);
-    } catch {
-      // silently ignore
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
+      if (!token) return { items: [] as NotificationItem[], nextCursor: null };
+      return fetchNotifications(token, { limit: 8 });
+    },
+    enabled: open,
+    staleTime: 10_000,
+  });
 
-  useEffect(() => {
-    if (open) loadItems();
-  }, [open, loadItems]);
+  const items = data?.items ?? [];
+  const loading = open && isPending && items.length === 0;
+
+  const markReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await markNotificationRead(token, id);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.preview(),
+      });
+      void refreshCount();
+    },
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await markAllNotificationsRead(token);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.preview(),
+      });
+      void refreshCount();
+    },
+  });
 
   async function handleMarkAllRead() {
-    const token = await getToken();
-    if (!token) return;
-    await markAllNotificationsRead(token);
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    refreshCount();
+    await markAllMutation.mutateAsync();
   }
 
   async function handleClick(notification: NotificationItem) {
     if (!notification.read) {
-      const token = await getToken();
-      if (token) {
-        await markNotificationRead(token, notification.id);
-        setItems((prev) =>
-          prev.map((n) =>
-            n.id === notification.id ? { ...n, read: true } : n,
-          ),
-        );
-        refreshCount();
-      }
+      await markReadMutation.mutateAsync(notification.id);
     }
     if (notification.actionUrl) {
       setOpen(false);
@@ -113,8 +125,10 @@ export function NotificationBell() {
           </h3>
           {items.some((n) => !n.read) && (
             <button
+              type="button"
               onClick={handleMarkAllRead}
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              disabled={markAllMutation.isPending}
+              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
             >
               <CheckCheck className="size-3.5" aria-hidden />
               Mark all read
@@ -123,7 +137,7 @@ export function NotificationBell() {
         </div>
 
         <div className="max-h-80 overflow-y-auto">
-          {loading && items.length === 0 ? (
+          {loading ? (
             <div className="space-y-3 p-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="animate-pulse space-y-1.5">
@@ -140,13 +154,15 @@ export function NotificationBell() {
               </p>
             </div>
           ) : (
-            <ul role="list">
+            <ul role="list" aria-busy={isFetching}>
               {items.map((n) => (
                 <li key={n.id}>
                   <button
-                    onClick={() => handleClick(n)}
+                    type="button"
+                    onClick={() => void handleClick(n)}
+                    disabled={markReadMutation.isPending}
                     className={cn(
-                      'flex w-full flex-col gap-0.5 px-4 py-3 text-left transition-colors hover:bg-muted/60',
+                      'flex w-full flex-col gap-0.5 px-4 py-3 text-left transition-colors hover:bg-muted/60 disabled:opacity-60',
                       !n.read && 'bg-primary/4',
                     )}
                   >
@@ -182,6 +198,7 @@ export function NotificationBell() {
 
         <div className="border-t border-border px-4 py-2.5">
           <button
+            type="button"
             onClick={() => {
               setOpen(false);
               router.push('/dashboard/settings/notifications');

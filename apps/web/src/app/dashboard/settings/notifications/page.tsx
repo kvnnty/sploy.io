@@ -1,14 +1,14 @@
 'use client';
 
 import { useAuth } from '@clerk/nextjs';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
-  Bell,
-  CheckCheck,
-  Eye,
-  EyeOff,
-  Trash2,
-} from 'lucide-react';
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { Bell, CheckCheck, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -27,10 +27,10 @@ import {
   markNotificationUnread,
   markAllNotificationsRead,
   deleteNotification,
-  type NotificationItem,
   type NotificationCategory,
   type NotificationPreference,
 } from '@/lib/notifications';
+import { queryKeys } from '@/lib/query-keys';
 
 const CATEGORY_LABELS: Record<NotificationCategory, string> = {
   account_security: 'Account & Security',
@@ -62,124 +62,111 @@ function timeAgo(dateStr: string): string {
 
 export default function NotificationsSettingsPage() {
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
   const { refreshCount } = useNotifications();
-
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
 
-  const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
-  const [prefsLoading, setPrefsLoading] = useState(true);
-
-  const load = useCallback(
-    async (cursor?: string) => {
+  const historyQuery = useInfiniteQuery({
+    queryKey: queryKeys.notifications.history(filter),
+    queryFn: async ({ pageParam }) => {
       const token = await getToken();
-      if (!token) return;
-
-      const isMore = Boolean(cursor);
-      if (isMore) setLoadingMore(true);
-      else setLoading(true);
-
-      try {
-        const opts: {
-          cursor?: string;
-          limit: number;
-          unreadOnly?: boolean;
-          category?: string;
-        } = { limit: 20 };
-        if (cursor) opts.cursor = cursor;
-        if (filter === 'unread') opts.unreadOnly = true;
-        else if (filter !== 'all') opts.category = filter;
-
-        const data = await fetchNotifications(token, opts);
-
-        if (isMore) {
-          setItems((prev) => [...prev, ...data.items]);
-        } else {
-          setItems(data.items);
-        }
-        setNextCursor(data.nextCursor);
-      } catch {
-        // silently ignore
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
+      if (!token) throw new Error('No token');
+      const opts: {
+        cursor?: string;
+        limit: number;
+        unreadOnly?: boolean;
+        category?: string;
+      } = { limit: 20, cursor: pageParam };
+      if (filter === 'unread') opts.unreadOnly = true;
+      else if (filter !== 'all') opts.category = filter;
+      return fetchNotifications(token, opts);
     },
-    [getToken, filter],
-  );
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const items =
+    historyQuery.data?.pages.flatMap((p) => p.items) ?? [];
 
-  useEffect(() => {
-    (async () => {
+  const prefsQuery = useQuery({
+    queryKey: queryKeys.notifications.preferences(),
+    queryFn: async () => {
       const token = await getToken();
-      if (!token) return;
-      try {
-        const prefs = await fetchNotificationPreferences(token);
-        setPreferences(prefs);
-      } catch {
-        // silently ignore
-      } finally {
-        setPrefsLoading(false);
-      }
-    })();
-  }, [getToken]);
+      if (!token) throw new Error('No token');
+      return fetchNotificationPreferences(token);
+    },
+    staleTime: 60_000,
+  });
 
-  async function handleMarkRead(id: string) {
-    const token = await getToken();
-    if (!token) return;
-    await markNotificationRead(token, id);
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-    refreshCount();
-  }
-
-  async function handleMarkUnread(id: string) {
-    const token = await getToken();
-    if (!token) return;
-    await markNotificationUnread(token, id);
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: false } : n)),
-    );
-    refreshCount();
-  }
-
-  async function handleMarkAllRead() {
-    const token = await getToken();
-    if (!token) return;
-    await markAllNotificationsRead(token);
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    refreshCount();
-  }
-
-  async function handleDelete(id: string) {
-    const token = await getToken();
-    if (!token) return;
-    await deleteNotification(token, id);
-    setItems((prev) => prev.filter((n) => n.id !== id));
-    refreshCount();
-  }
-
-  async function handleTogglePref(
-    category: NotificationCategory,
-    field: 'inAppEnabled' | 'emailEnabled',
-    current: boolean,
-  ) {
-    const token = await getToken();
-    if (!token) return;
-    const updated = await updateNotificationPreference(token, category, {
-      [field]: !current,
+  const invalidateNotificationQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.notifications.root,
     });
-    setPreferences((prev) =>
-      prev.map((p) => (p.category === category ? updated : p)),
-    );
-  }
+    void refreshCount();
+  };
+
+  const markReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await markNotificationRead(token, id);
+    },
+    onSuccess: invalidateNotificationQueries,
+  });
+
+  const markUnreadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await markNotificationUnread(token, id);
+    },
+    onSuccess: invalidateNotificationQueries,
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await markAllNotificationsRead(token);
+    },
+    onSuccess: invalidateNotificationQueries,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      await deleteNotification(token, id);
+    },
+    onSuccess: invalidateNotificationQueries,
+  });
+
+  const prefMutation = useMutation({
+    mutationFn: async ({
+      category,
+      field,
+      value,
+    }: {
+      category: NotificationCategory;
+      field: 'inAppEnabled' | 'emailEnabled';
+      value: boolean;
+    }) => {
+      const token = await getToken();
+      if (!token) throw new Error('No token');
+      return updateNotificationPreference(token, category, {
+        [field]: value,
+      });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.preferences(),
+      });
+    },
+  });
+
+  const loading = historyQuery.isPending;
+  const prefsLoading = prefsQuery.isPending;
+  const preferences = prefsQuery.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -196,7 +183,8 @@ export default function NotificationsSettingsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleMarkAllRead}
+                onClick={() => void markAllMutation.mutateAsync()}
+                disabled={markAllMutation.isPending}
               >
                 <CheckCheck className="size-3.5" data-icon="inline-start" />
                 Mark all read
@@ -207,6 +195,7 @@ export default function NotificationsSettingsPage() {
             {FILTERS.map((f) => (
               <button
                 key={f.value}
+                type="button"
                 onClick={() => setFilter(f.value)}
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
@@ -221,7 +210,11 @@ export default function NotificationsSettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {historyQuery.isError ? (
+            <p className="text-sm text-destructive">
+              Could not load notifications.
+            </p>
+          ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="animate-pulse space-y-1.5">
@@ -279,7 +272,10 @@ export default function NotificationsSettingsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => handleMarkUnread(n.id)}
+                          onClick={() =>
+                            void markUnreadMutation.mutateAsync(n.id)
+                          }
+                          disabled={markUnreadMutation.isPending}
                           aria-label="Mark unread"
                         >
                           <EyeOff className="size-3.5" />
@@ -288,7 +284,8 @@ export default function NotificationsSettingsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => handleMarkRead(n.id)}
+                          onClick={() => void markReadMutation.mutateAsync(n.id)}
+                          disabled={markReadMutation.isPending}
                           aria-label="Mark read"
                         >
                           <Eye className="size-3.5" />
@@ -297,7 +294,8 @@ export default function NotificationsSettingsPage() {
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        onClick={() => handleDelete(n.id)}
+                        onClick={() => void deleteMutation.mutateAsync(n.id)}
+                        disabled={deleteMutation.isPending}
                         aria-label="Delete notification"
                       >
                         <Trash2 className="size-3.5 text-destructive" />
@@ -306,18 +304,20 @@ export default function NotificationsSettingsPage() {
                   </li>
                 ))}
               </ul>
-              {nextCursor && (
+              {historyQuery.hasNextPage ? (
                 <div className="pt-4 text-center">
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={loadingMore}
-                    onClick={() => load(nextCursor)}
+                    disabled={historyQuery.isFetchingNextPage}
+                    onClick={() => void historyQuery.fetchNextPage()}
                   >
-                    {loadingMore ? 'Loading…' : 'Load more'}
+                    {historyQuery.isFetchingNextPage
+                      ? 'Loading…'
+                      : 'Load more'}
                   </Button>
                 </div>
-              )}
+              ) : null}
             </>
           )}
         </CardContent>
@@ -355,12 +355,13 @@ export default function NotificationsSettingsPage() {
                         type="checkbox"
                         checked={pref.inAppEnabled}
                         onChange={() =>
-                          handleTogglePref(
-                            pref.category,
-                            'inAppEnabled',
-                            pref.inAppEnabled,
-                          )
+                          void prefMutation.mutateAsync({
+                            category: pref.category,
+                            field: 'inAppEnabled',
+                            value: !pref.inAppEnabled,
+                          })
                         }
+                        disabled={prefMutation.isPending}
                         className="size-4 rounded border-border accent-primary"
                       />
                       In-app

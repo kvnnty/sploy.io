@@ -7,11 +7,13 @@ model Team {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  memberships    Membership[]
-  ssoConnections SsoConnection[]
-  dataSources    DataSource[]
-  authEvents     AuthEvent[]
-  invitations    Invitation[]
+  preferredByUsers User[]           @relation("PreferredTeam")
+  memberships      Membership[]
+  ssoConnections   SsoConnection[]
+  dataSources      DataSource[]
+  authEvents       AuthEvent[]
+  invitations      Invitation[]
+  activities       TeamActivity[]
 
   @@map("teams")
   @@schema("core")

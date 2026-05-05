@@ -62,7 +62,7 @@ function ProfileSection() {
           <label htmlFor="display-name" className="text-xs font-medium text-muted-foreground">
             Display name
           </label>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <input
               id="display-name"
               value={displayName}

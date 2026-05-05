@@ -192,6 +192,11 @@ export class BootstrapService {
       throw new ForbiddenException('Not a member of this team');
     }
 
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { preferredTeamId: teamId },
+    });
+
     return {
       teamId: membership.teamId,
       teamSlug: membership.team.slug,
@@ -210,6 +215,7 @@ export class BootstrapService {
       name: m.team.name,
       slug: m.team.slug,
       role: m.role,
+      logoUrl: m.team.logoUrl,
     }));
   }
 }

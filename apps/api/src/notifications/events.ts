@@ -2,6 +2,7 @@ export const NOTIFICATION_EVENTS = {
   NEW_SESSION: 'notification.new_session',
   TEAM_INVITE: 'notification.team_invite',
   INVITE_ACCEPTED: 'notification.invite_accepted',
+  INVITE_DECLINED: 'notification.invite_declined',
   ROLE_CHANGED: 'notification.role_changed',
   MEMBER_REMOVED: 'notification.member_removed',
 } as const;
@@ -27,6 +28,14 @@ export interface InviteAcceptedEvent {
   teamName: string;
   invitationId: string;
   accepterName: string | null;
+}
+
+export interface InviteDeclinedEvent {
+  userId: string;
+  teamId: string;
+  invitationId: string;
+  declinerEmail: string;
+  declinerName: string | null;
 }
 
 export interface RoleChangedEvent {

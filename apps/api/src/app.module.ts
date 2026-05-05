@@ -13,6 +13,7 @@ import { SessionsModule } from './sessions';
 import { ProvidersModule } from './providers';
 import { TeamManagementModule } from './team-management';
 import { NotificationsModule } from './notifications';
+import { StorageModule } from './storage';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -33,6 +34,7 @@ import { validate } from './config/env.validation';
     ProvidersModule,
     TeamManagementModule,
     NotificationsModule,
+    StorageModule,
   ],
   controllers: [AppController],
 })

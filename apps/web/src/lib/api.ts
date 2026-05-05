@@ -13,6 +13,7 @@ export type TeamMembership = {
   name: string;
   slug: string;
   role: string;
+  logoUrl?: string | null;
 };
 
 export type DataSourceSummary = {
@@ -67,4 +68,29 @@ export async function apiFetchWithToken<T = unknown>(
   options: RequestInit = {},
 ): Promise<T> {
   return apiFetchServer<T>(path, token, options);
+}
+
+/**
+ * Upload a file via multipart/form-data.
+ * Do NOT set Content-Type — the browser will set the boundary automatically.
+ */
+export async function apiUploadFile<T = unknown>(
+  path: string,
+  token: string,
+  formData: FormData,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? `Upload error ${res.status}`);
+  }
+
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }

@@ -5,14 +5,20 @@ import Logo from '@/components/shared/logo';
 import { HelpDropdown } from './help-dropdown';
 import { NotificationBell } from './notification-bell';
 import { ProfileDropdown } from './profile-dropdown';
+import { TeamSwitcher } from '../dashboard/team-switcher';
+import type { TeamMembership } from '@/lib/api';
 
 export function Navbar({
   name,
   email,
+  teams,
+  activeTeamId,
   mobileMenu,
 }: {
   name: string;
   email: string;
+  teams?: TeamMembership[];
+  activeTeamId?: string | null;
   mobileMenu?: React.ReactNode;
 }) {
   return (
@@ -30,6 +36,11 @@ export function Navbar({
           </nav>
         </div>
         <div className="flex items-center gap-2">
+          {teams && teams.length > 1 && (
+            <div className="hidden w-44 md:block">
+              <TeamSwitcher teams={teams} activeTeamId={activeTeamId ?? null} />
+            </div>
+          )}
           <NotificationBell />
           <HelpDropdown />
           <ProfileDropdown name={name} email={email} />
