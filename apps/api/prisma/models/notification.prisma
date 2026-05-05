@@ -1,0 +1,29 @@
+enum NotificationCategory {
+  account_security
+  team_collaboration
+  system_product
+
+  @@schema("core")
+}
+
+model Notification {
+  id             String               @id @default(uuid()) @db.Uuid
+  userId         String               @map("user_id") @db.Uuid
+  category       NotificationCategory
+  type           String               @db.VarChar(100)
+  title          String               @db.VarChar(255)
+  body           String?
+  actionUrl      String?              @map("action_url") @db.VarChar(512)
+  readAt         DateTime?            @map("read_at") @db.Timestamptz(6)
+  idempotencyKey String?              @map("idempotency_key") @db.VarChar(255)
+  metadata       Json                 @default("{}")
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey], map: "uq_notification_idempotency")
+  @@index([userId, createdAt(sort: Desc)], map: "idx_notifications_user_created")
+  @@index([userId, readAt], map: "idx_notifications_user_read")
+  @@map("notifications")
+  @@schema("core")
+}

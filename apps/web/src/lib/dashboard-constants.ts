@@ -1,1 +1,1 @@
-export const ACTIVE_ORG_COOKIE = 'sploy_active_org';
+export const ACTIVE_TEAM_COOKIE = 'sploy_active_team';

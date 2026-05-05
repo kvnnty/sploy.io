@@ -20,13 +20,13 @@ export class DataSourcesService {
   ) {}
 
   async create(
-    orgId: string,
+    teamId: string,
     dto: CreateDataSourceDto,
   ): Promise<DataSourcePublic> {
     const encryptedCredential = this.crypto.encrypt(dto.password);
     const row = await this.prisma.dataSource.create({
       data: {
-        orgId,
+        teamId,
         name: dto.name,
         host: dto.host,
         port: dto.port,
@@ -38,9 +38,9 @@ export class DataSourcesService {
     return this.toPublic(row);
   }
 
-  async listForOrg(orgId: string): Promise<DataSourcePublic[]> {
+  async listForTeam(teamId: string): Promise<DataSourcePublic[]> {
     const rows = await this.prisma.dataSource.findMany({
-      where: { orgId },
+      where: { teamId },
       orderBy: { name: 'asc' },
     });
     return rows.map((r) => this.toPublic(r));
@@ -49,7 +49,7 @@ export class DataSourcesService {
   private toPublic(row: DataSource): DataSourcePublic {
     return {
       id: row.id,
-      orgId: row.orgId,
+      teamId: row.teamId,
       name: row.name,
       kind: row.kind,
       host: row.host,
@@ -61,13 +61,13 @@ export class DataSourcesService {
     };
   }
 
-  async delete(orgId: string, id: string): Promise<void> {
-    const ds = await this.requireForOrg(orgId, id);
+  async delete(teamId: string, id: string): Promise<void> {
+    const ds = await this.requireForTeam(teamId, id);
     await this.prisma.dataSource.delete({ where: { id: ds.id } });
   }
 
-  async testConnection(orgId: string, id: string): Promise<{ ok: true }> {
-    const ds = await this.requireForOrg(orgId, id);
+  async testConnection(teamId: string, id: string): Promise<{ ok: true }> {
+    const ds = await this.requireForTeam(teamId, id);
     const password = this.crypto.decrypt(ds.encryptedCredential);
     await this.queryExecution.ping({
       host: ds.host,
@@ -80,11 +80,11 @@ export class DataSourcesService {
   }
 
   async runQuery(
-    orgId: string,
+    teamId: string,
     id: string,
     sql: string,
   ): Promise<{ rows: Record<string, unknown>[]; truncated: boolean }> {
-    const ds = await this.requireForOrg(orgId, id);
+    const ds = await this.requireForTeam(teamId, id);
     const password = this.crypto.decrypt(ds.encryptedCredential);
     return this.queryExecution.runReadOnlySelect(
       {
@@ -98,14 +98,14 @@ export class DataSourcesService {
     );
   }
 
-  private async requireForOrg(orgId: string, id: string): Promise<DataSource> {
+  private async requireForTeam(teamId: string, id: string): Promise<DataSource> {
     const ds = await this.prisma.dataSource.findFirst({
-      where: { id, orgId },
+      where: { id, teamId },
     });
     if (!ds) {
       throw new NotFoundException('Data source not found');
     }
-    if (ds.orgId !== orgId) {
+    if (ds.teamId !== teamId) {
       throw new ForbiddenException();
     }
     return ds;

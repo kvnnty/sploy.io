@@ -1,4 +1,4 @@
-model Organization {
+model Team {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   slug      String   @unique
@@ -7,11 +7,14 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  memberships    Membership[]
-  ssoConnections SsoConnection[]
-  dataSources    DataSource[]
-  authEvents     AuthEvent[]
+  preferredByUsers User[]           @relation("PreferredTeam")
+  memberships      Membership[]
+  ssoConnections   SsoConnection[]
+  dataSources      DataSource[]
+  authEvents       AuthEvent[]
+  invitations      Invitation[]
+  activities       TeamActivity[]
 
-  @@map("organizations")
+  @@map("teams")
   @@schema("core")
 }

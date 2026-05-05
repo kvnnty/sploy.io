@@ -6,28 +6,28 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import {
   apiFetchServer,
   type AuthMeResponse,
-  type OrgMembership,
+  type TeamMembership,
 } from '@/lib/api';
-import { ACTIVE_ORG_COOKIE } from '@/lib/dashboard-constants';
+import { ACTIVE_TEAM_COOKIE } from '@/lib/dashboard-constants';
 
-function pickOrgId(
+function pickTeamId(
   me: AuthMeResponse,
-  orgs: OrgMembership[],
+  teams: TeamMembership[],
   cookieVal: string | undefined,
 ): string | null {
-  if (!orgs.length) return null;
-  const ids = new Set(orgs.map((o) => o.org_id));
+  if (!teams.length) return null;
+  const ids = new Set(teams.map((t) => t.team_id));
   if (cookieVal && ids.has(cookieVal)) return cookieVal;
-  if (me.activeOrgId && ids.has(me.activeOrgId)) return me.activeOrgId;
-  return orgs[0].org_id;
+  if (me.activeTeamId && ids.has(me.activeTeamId)) return me.activeTeamId;
+  return teams[0].team_id;
 }
 
 export type DashboardLoadResult = {
-  user: { id: string; email?: string };
+  user: { id: string; email?: string; name?: string; imageUrl?: string };
   accessToken: string | null;
   me: AuthMeResponse;
-  orgs: OrgMembership[];
-  activeOrgId: string | null;
+  teams: TeamMembership[];
+  activeTeamId: string | null;
   apiAvailable: boolean;
 };
 
@@ -42,10 +42,10 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
     authUserId: user.id,
     email: user.emailAddresses[0]?.emailAddress ?? '',
     internalUserId: null,
-    activeOrgId: null,
+    activeTeamId: null,
     role: null,
   };
-  let orgs: OrgMembership[] = [];
+  let teams: TeamMembership[] = [];
   let apiAvailable = false;
 
   if (accessToken) {
@@ -54,12 +54,12 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
       apiAvailable = true;
       if (me.internalUserId) {
         try {
-          orgs = await apiFetchServer<OrgMembership[]>(
-            '/auth/orgs',
+          teams = await apiFetchServer<TeamMembership[]>(
+            '/auth/teams',
             accessToken,
           );
         } catch {
-          orgs = [];
+          teams = [];
         }
       }
     } catch {
@@ -68,15 +68,20 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
   }
 
   const cookieStore = await cookies();
-  const cookieOrg = cookieStore.get(ACTIVE_ORG_COOKIE)?.value;
-  const activeOrgId = pickOrgId(me, orgs, cookieOrg);
+  const cookieTeam = cookieStore.get(ACTIVE_TEAM_COOKIE)?.value;
+  const activeTeamId = pickTeamId(me, teams, cookieTeam);
 
   return {
-    user: { id: user.id, email: user.emailAddresses[0]?.emailAddress },
+    user: {
+      id: user.id,
+      email: user.emailAddresses[0]?.emailAddress,
+      name: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || undefined,
+      imageUrl: user.imageUrl,
+    },
     accessToken,
     me,
-    orgs,
-    activeOrgId,
+    teams,
+    activeTeamId,
     apiAvailable,
   };
 });

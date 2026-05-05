@@ -1,0 +1,27 @@
+enum InvitationStatus {
+  pending
+  accepted
+  declined
+  expired
+
+  @@schema("core")
+}
+
+model Invitation {
+  id        String           @id @default(uuid()) @db.Uuid
+  teamId    String           @map("team_id") @db.Uuid
+  email     String
+  role      TeamRole         @default(member)
+  status    InvitationStatus @default(pending)
+  invitedBy String           @map("invited_by") @db.Uuid
+  expiresAt DateTime         @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team    Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  inviter User @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, email], map: "uq_invitation_team_email")
+  @@map("invitations")
+  @@schema("core")
+}

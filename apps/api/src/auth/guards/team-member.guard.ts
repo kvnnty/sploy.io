@@ -5,39 +5,39 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { OrgRole } from '@prisma/client';
+import type { TeamRole } from '@prisma/client';
 import { PrismaService } from '../../database';
 import type { AuthUser } from '../interfaces/auth-user.interface';
 
 @Injectable()
-export class OrgMemberGuard implements CanActivate {
+export class TeamMemberGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<{
       user?: AuthUser;
-      params: { orgId?: string };
-      orgMembership?: { orgId: string; role: OrgRole };
+      params: { teamId?: string };
+      teamMembership?: { teamId: string; role: TeamRole };
     }>();
     const user = request.user;
-    const orgId = request.params.orgId;
+    const teamId = request.params.teamId;
 
     if (!user?.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    if (!orgId) {
-      throw new ForbiddenException('Missing organization');
+    if (!teamId) {
+      throw new ForbiddenException('Missing team');
     }
 
     const membership = await this.prisma.membership.findFirst({
-      where: { userId: user.internalUserId, orgId },
+      where: { userId: user.internalUserId, teamId },
     });
 
     if (!membership) {
-      throw new ForbiddenException('Not a member of this organization');
+      throw new ForbiddenException('Not a member of this team');
     }
 
-    request.orgMembership = { orgId, role: membership.role };
+    request.teamMembership = { teamId, role: membership.role };
     return true;
   }
 }

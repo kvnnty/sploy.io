@@ -10,14 +10,14 @@ type AuthEventTypeInput =
   | 'sso_initiated'
   | 'sso_completed'
   | 'user_bootstrapped'
-  | 'org_created'
+  | 'team_created'
   | 'membership_changed'
   | 'session_revoked';
 
 interface AuditLogParams {
   eventType: AuthEventTypeInput;
   userId?: string | null;
-  orgId?: string | null;
+  teamId?: string | null;
   ipAddress?: string | null;
   userAgent?: string | null;
   metadata?: Record<string, unknown>;
@@ -35,7 +35,7 @@ export class AuditService {
         data: {
           eventType: params.eventType as AuthEventType,
           userId: params.userId ?? null,
-          orgId: params.orgId ?? null,
+          teamId: params.teamId ?? null,
           ipAddress: params.ipAddress ?? null,
           userAgent: params.userAgent ?? null,
           metadata: (params.metadata ?? {}) as object,

@@ -1,14 +1,21 @@
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
-  authUserId  String   @unique @map("auth_user_id") @db.VarChar(255)
-  email       String
-  displayName String?  @map("display_name")
-  avatarUrl   String?  @map("avatar_url")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String   @id @default(uuid()) @db.Uuid
+  authUserId      String   @unique @map("auth_user_id") @db.VarChar(255)
+  email           String
+  displayName     String?  @map("display_name")
+  avatarUrl       String?  @map("avatar_url")
+  preferredTeamId String?  @map("preferred_team_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  memberships Membership[]
-  authEvents  AuthEvent[]
+  preferredTeam            Team?                    @relation("PreferredTeam", fields: [preferredTeamId], references: [id], onDelete: SetNull)
+  memberships              Membership[]
+  authEvents               AuthEvent[]
+  sentInvitations          Invitation[]
+  sessions                 UserSession[]
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference[]
+  teamActivities           TeamActivity[]           @relation("TeamActivityActor")
 
   @@map("users")
   @@schema("core")

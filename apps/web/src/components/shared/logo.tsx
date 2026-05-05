@@ -1,8 +1,15 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-export default function Logo() {
+const LOGO_BOX = {
+  sm: "h-6 w-[5.25rem] sm:h-6 sm:w-[5.25rem]",
+  md: "h-9 w-28 sm:h-10 sm:w-32",
+  lg: "h-11 w-32",
+} as const;
+
+export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   return (
     <Link
       href="/"
@@ -12,17 +19,17 @@ export default function Logo() {
       <Image
         src="/sploylogo-dark.svg"
         alt="Sploy"
-        width={410}
-        height={85}
-        className="h-9 w-28 sm:h-10 sm:w-32 dark:hidden"
+        width={size === 'sm' ? 205 : size === 'md' ? 410 : 820}
+        height={size === 'sm' ? 42.5 : size === 'md' ? 85 : 170}
+        className={cn("dark:hidden", LOGO_BOX[size])}
         priority
       />
       <Image
         src="/sploylogo-white.svg"
         alt="Sploy"
-        width={410}
-        height={85}
-        className="hidden h-9 w-28 sm:h-10 sm:w-32 dark:block"
+        width={size === 'sm' ? 205 : size === 'md' ? 410 : 820}
+        height={size === 'sm' ? 42.5 : size === 'md' ? 85 : 170}
+        className={cn("hidden dark:block", LOGO_BOX[size])}
         priority
       />
     </Link>

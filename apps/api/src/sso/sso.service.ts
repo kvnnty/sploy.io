@@ -6,14 +6,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import {
-  OrgRole,
+  TeamRole,
   type SsoConnection as SsoConnectionRow,
 } from '@prisma/client';
 import { PrismaService } from '../database';
 
 export interface SsoConnection {
   id: string;
-  org_id: string;
+  team_id: string;
   provider: string;
   domain: string;
   metadata_url: string | null;
@@ -24,7 +24,7 @@ export interface SsoConnection {
 function toApiConnection(row: SsoConnectionRow): SsoConnection {
   return {
     id: row.id,
-    org_id: row.orgId,
+    team_id: row.teamId,
     provider: row.provider,
     domain: row.domain,
     metadata_url: row.metadataUrl,
@@ -33,8 +33,8 @@ function toApiConnection(row: SsoConnectionRow): SsoConnection {
   };
 }
 
-function isAdminRole(role: OrgRole): boolean {
-  return role === OrgRole.owner || role === OrgRole.admin;
+function isAdminRole(role: TeamRole): boolean {
+  return role === TeamRole.owner || role === TeamRole.admin;
 }
 
 @Injectable()
@@ -45,20 +45,20 @@ export class SsoService {
 
   async discover(
     domain: string,
-  ): Promise<{ orgSlug: string; enabled: boolean } | null> {
+  ): Promise<{ teamSlug: string; enabled: boolean } | null> {
     const conn = await this.prisma.ssoConnection.findFirst({
       where: { domain: domain.toLowerCase() },
-      include: { org: true },
+      include: { team: true },
     });
 
     if (!conn) return null;
-    return { orgSlug: conn.org.slug, enabled: conn.enabled };
+    return { teamSlug: conn.team.slug, enabled: conn.enabled };
   }
 
   async createConnection(
     userId: string,
     data: {
-      orgId: string;
+      teamId: string;
       domain: string;
       metadataUrl?: string;
       metadataXml?: string;
@@ -66,7 +66,7 @@ export class SsoService {
     },
   ): Promise<SsoConnection> {
     const membership = await this.prisma.membership.findFirst({
-      where: { userId, orgId: data.orgId },
+      where: { userId, teamId: data.teamId },
     });
     if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');
@@ -84,7 +84,7 @@ export class SsoService {
 
     const row = await this.prisma.ssoConnection.create({
       data: {
-        orgId: data.orgId,
+        teamId: data.teamId,
         domain: data.domain.toLowerCase(),
         metadataUrl: data.metadataUrl ?? null,
         metadataXml: data.metadataXml ?? null,
@@ -93,7 +93,7 @@ export class SsoService {
     });
 
     this.logger.log(
-      `SSO connection created for domain=${data.domain} org=${data.orgId}`,
+      `SSO connection created for domain=${data.domain} team=${data.teamId}`,
     );
     return toApiConnection(row);
   }
@@ -110,12 +110,12 @@ export class SsoService {
   ): Promise<SsoConnection> {
     const conn = await this.prisma.ssoConnection.findFirst({
       where: { id: connectionId },
-      select: { orgId: true },
+      select: { teamId: true },
     });
     if (!conn) throw new NotFoundException('SSO connection not found');
 
     const membership = await this.prisma.membership.findFirst({
-      where: { userId, orgId: conn.orgId },
+      where: { userId, teamId: conn.teamId },
     });
     if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');
@@ -151,9 +151,9 @@ export class SsoService {
     return toApiConnection(row);
   }
 
-  async listConnections(orgId: string): Promise<SsoConnection[]> {
+  async listConnections(teamId: string): Promise<SsoConnection[]> {
     const rows = await this.prisma.ssoConnection.findMany({
-      where: { orgId },
+      where: { teamId },
       orderBy: { createdAt: 'asc' },
     });
     return rows.map(toApiConnection);
@@ -162,12 +162,12 @@ export class SsoService {
   async deleteConnection(userId: string, connectionId: string): Promise<void> {
     const conn = await this.prisma.ssoConnection.findFirst({
       where: { id: connectionId },
-      select: { orgId: true },
+      select: { teamId: true },
     });
     if (!conn) throw new NotFoundException('SSO connection not found');
 
     const membership = await this.prisma.membership.findFirst({
-      where: { userId, orgId: conn.orgId },
+      where: { userId, teamId: conn.teamId },
     });
     if (!membership || !isAdminRole(membership.role)) {
       throw new ForbiddenException('Only owners/admins can manage SSO');

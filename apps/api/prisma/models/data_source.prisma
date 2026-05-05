@@ -6,7 +6,7 @@ enum DataSourceKind {
 
 model DataSource {
   id                   String          @id @default(uuid()) @db.Uuid
-  orgId                String          @map("org_id") @db.Uuid
+  teamId               String          @map("team_id") @db.Uuid
   name                 String
   kind                 DataSourceKind  @default(postgresql)
   host                 String
@@ -17,9 +17,9 @@ model DataSource {
   createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  @@index([orgId])
+  @@index([teamId])
   @@map("data_sources")
   @@schema("core")
 }

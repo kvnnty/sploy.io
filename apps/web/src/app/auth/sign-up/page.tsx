@@ -23,8 +23,8 @@ export default function SignUpPage() {
     setError(null);
     const { error: err } = await signUp.sso({
       strategy,
-      redirectUrl: '/auth/sso-callback',
-      redirectCallbackUrl: '/dashboard',
+      redirectUrl: '/dashboard',
+      redirectCallbackUrl: '/auth/sso-callback',
     });
     if (err) setError(formatClerkError(err));
   }
@@ -96,7 +96,7 @@ export default function SignUpPage() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -161,7 +161,7 @@ export default function SignUpPage() {
             disabled={loading}
             className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? 'Sending...' : 'Send verification link'}
+            {loading ? 'Please wait...' : 'Send verification link'}
           </button>
         </form>
 

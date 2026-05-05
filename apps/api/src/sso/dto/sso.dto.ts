@@ -7,7 +7,7 @@ export class DiscoverSsoDto {
 
 export class CreateSsoConnectionDto {
   @IsString()
-  orgId!: string;
+  teamId!: string;
 
   @IsString()
   domain!: string;

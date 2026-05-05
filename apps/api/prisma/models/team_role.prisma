@@ -1,4 +1,4 @@
-enum OrgRole {
+enum TeamRole {
   owner
   admin
   member

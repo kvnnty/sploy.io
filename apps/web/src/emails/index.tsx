@@ -31,7 +31,7 @@ const WaitlistEmail = ({ userFirstname }: { userFirstname: string }) => {
           <Container className="mx-auto max-w-[600px] rounded-[8px] bg-[#101111] p-[32px]">
             <Section className="mt-[16px] text-center">
               <Text className="m-0 text-[28px] font-bold text-white">
-                Welcome to <span className="text-[#55b3ff]">Sploy</span>
+                Welcome to <span className="text-[#e5ff00]">Sploy</span>
               </Text>
 
               <Text className="mb-[16px] mt-[16px] text-[18px] text-[#9c9c9d]">

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useClerk, useSignUp } from '@clerk/nextjs';
 
 export default function VerifySignUpPage() {
   const { loaded: clerkLoaded } = useClerk();
   const { signUp } = useSignUp();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [finalized, setFinalized] = useState(false);
 
   const verification = signUp?.verifications?.emailLinkVerification;
@@ -42,6 +43,21 @@ export default function VerifySignUpPage() {
   }
 
   if (!signUp || !verification) {
+    if (searchParams.get('__clerk_status') === 'client_mismatch') {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="mx-auto w-full max-w-sm space-y-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Finish signing up on the same device and browser where you started.
+            </p>
+            <Link href="/auth/sign-up" className="text-sm text-muted-foreground hover:text-foreground">
+              Back to sign up
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="mx-auto w-full max-w-sm space-y-6 text-center">
@@ -55,7 +71,7 @@ export default function VerifySignUpPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="mx-auto w-full max-w-sm space-y-6 text-center">
-          <p className="text-sm text-red-400">Email verification failed.</p>
+          <p className="text-sm text-destructive">Email verification failed.</p>
           <Link href="/auth/sign-up" className="text-sm text-muted-foreground hover:text-foreground">
             Try signing up again
           </Link>
@@ -68,7 +84,7 @@ export default function VerifySignUpPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="mx-auto w-full max-w-sm space-y-6 text-center">
-          <p className="text-sm text-red-400">This link has expired.</p>
+          <p className="text-sm text-destructive">This link has expired.</p>
           <Link href="/auth/sign-up" className="text-sm text-muted-foreground hover:text-foreground">
             Request a new link
           </Link>

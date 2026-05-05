@@ -1,9 +1,9 @@
-import type { OrgRole } from '@prisma/client';
+import type { TeamRole } from '@prisma/client';
 
 declare global {
   namespace Express {
     interface Request {
-      orgMembership?: { orgId: string; role: OrgRole };
+      teamMembership?: { teamId: string; role: TeamRole };
     }
   }
 }

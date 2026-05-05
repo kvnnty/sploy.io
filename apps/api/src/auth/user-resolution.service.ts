@@ -12,7 +12,7 @@ export class UserResolutionService {
     const user = await this.prisma.user.findFirst({
       where: { authUserId: authUser.authUserId },
       include: {
-        memberships: { take: 1, orderBy: { createdAt: 'asc' } },
+        memberships: { orderBy: { createdAt: 'asc' } },
       },
     });
 
@@ -23,12 +23,20 @@ export class UserResolutionService {
       return authUser;
     }
 
-    const m = user.memberships[0];
+    if (!user.memberships.length) {
+      return { ...authUser, internalUserId: user.id };
+    }
+
+    const preferred = user.preferredTeamId
+      ? user.memberships.find((m) => m.teamId === user.preferredTeamId)
+      : undefined;
+    const active = preferred ?? user.memberships[0];
+
     return {
       ...authUser,
       internalUserId: user.id,
-      activeOrgId: m?.orgId ?? undefined,
-      role: m?.role ?? undefined,
+      activeTeamId: active?.teamId ?? undefined,
+      role: active?.role ?? undefined,
     };
   }
 }

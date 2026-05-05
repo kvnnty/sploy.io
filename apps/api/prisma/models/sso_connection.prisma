@@ -1,6 +1,6 @@
 model SsoConnection {
   id               String      @id @default(uuid()) @db.Uuid
-  orgId            String      @map("org_id") @db.Uuid
+  teamId           String      @map("team_id") @db.Uuid
   provider         SsoProvider @default(saml)
   domain           String      @unique
   metadataUrl      String?     @map("metadata_url")
@@ -10,7 +10,7 @@ model SsoConnection {
   createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("sso_connections")
   @@schema("core")
