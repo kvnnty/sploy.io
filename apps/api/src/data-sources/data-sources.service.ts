@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import type { DataSource } from '../generated/prisma/client';
+import type { DataSource } from '@prisma/client';
 import { PrismaService } from '../database';
 import { CredentialCryptoService } from './credential-crypto.service';
 import { QueryExecutionService } from '../query/query-execution.service';

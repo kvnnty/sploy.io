@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OrgRole } from '../generated/prisma/client';
+import { OrgRole } from '@prisma/client';
 import { OrgMemberGuard } from '../auth/guards/org-member.guard';
 import { Roles } from '../auth';
 import { DataSourcesService } from './data-sources.service';

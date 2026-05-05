@@ -62,7 +62,6 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-muted-foreground sm:flex-row">
           <p className="tracking-[0.02em]">© {year} Sploy. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-            <ThemeToggle />
             <Link
               href="#"
               className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
@@ -87,6 +86,7 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
             >
               Join beta
             </Link>
+            <ThemeToggle />
           </div>
         </div>
       </footer>

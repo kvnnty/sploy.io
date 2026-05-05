@@ -5,7 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { OrgRole } from '../../generated/prisma/client';
+import type { OrgRole } from '@prisma/client';
 import { PrismaService } from '../../database';
 import type { AuthUser } from '../interfaces/auth-user.interface';
 

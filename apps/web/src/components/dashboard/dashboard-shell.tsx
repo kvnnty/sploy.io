@@ -132,7 +132,7 @@ export function DashboardShell({
                 <p className="mb-2 truncate text-xs text-muted-foreground">{userEmail}</p>
                 <Link
                   href="/logout"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  className="text-xs text-muted-foreground underline-offset-5 hover:text-foreground hover:underline"
                 >
                   Sign out
                 </Link>

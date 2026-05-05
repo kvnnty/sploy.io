@@ -19,7 +19,7 @@ export default async function DataSourcesPage() {
   let sources: DataSourceSummary[] = [];
   let loadError: string | null = null;
 
-  if (apiAvailable && activeOrgId && me.internalUserId) {
+  if (apiAvailable && accessToken && activeOrgId && me.internalUserId) {
     try {
       sources = await apiFetchServer<DataSourceSummary[]>(
         `/orgs/${activeOrgId}/data-sources`,
@@ -83,7 +83,7 @@ export default async function DataSourcesPage() {
         </p>
       ) : null}
 
-      {apiAvailable && activeOrgId && me.internalUserId && !loadError ? (
+      {apiAvailable && accessToken && activeOrgId && me.internalUserId && !loadError ? (
         sources.length === 0 ? (
           <Card className="border-dashed border-border bg-transparent ring-border">
             <CardHeader>

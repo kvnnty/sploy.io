@@ -39,7 +39,6 @@ export function useLastOAuthStrategy() {
 
   const rememberStrategy = useCallback((strategy: OAuthStrategy) => {
     setLastOAuthStrategy(strategy);
-    setLast(strategy);
   }, []);
 
   return { lastStrategy, rememberStrategy };

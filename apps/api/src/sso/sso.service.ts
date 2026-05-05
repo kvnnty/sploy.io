@@ -5,7 +5,10 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { OrgRole, type SsoConnection as SsoConnectionRow } from '../generated/prisma/client';
+import {
+  OrgRole,
+  type SsoConnection as SsoConnectionRow,
+} from '@prisma/client';
 import { PrismaService } from '../database';
 
 export interface SsoConnection {
@@ -40,7 +43,9 @@ export class SsoService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async discover(domain: string): Promise<{ orgSlug: string; enabled: boolean } | null> {
+  async discover(
+    domain: string,
+  ): Promise<{ orgSlug: string; enabled: boolean } | null> {
     const conn = await this.prisma.ssoConnection.findFirst({
       where: { domain: domain.toLowerCase() },
       include: { org: true },
@@ -72,7 +77,9 @@ export class SsoService {
       select: { id: true },
     });
     if (existing) {
-      throw new ConflictException(`SSO connection for domain "${data.domain}" already exists`);
+      throw new ConflictException(
+        `SSO connection for domain "${data.domain}" already exists`,
+      );
     }
 
     const row = await this.prisma.ssoConnection.create({
@@ -85,7 +92,9 @@ export class SsoService {
       },
     });
 
-    this.logger.log(`SSO connection created for domain=${data.domain} org=${data.orgId}`);
+    this.logger.log(
+      `SSO connection created for domain=${data.domain} org=${data.orgId}`,
+    );
     return toApiConnection(row);
   }
 
@@ -127,8 +136,12 @@ export class SsoService {
     const row = await this.prisma.ssoConnection.update({
       where: { id: connectionId },
       data: {
-        ...(data.metadataUrl !== undefined && { metadataUrl: data.metadataUrl }),
-        ...(data.metadataXml !== undefined && { metadataXml: data.metadataXml }),
+        ...(data.metadataUrl !== undefined && {
+          metadataUrl: data.metadataUrl,
+        }),
+        ...(data.metadataXml !== undefined && {
+          metadataXml: data.metadataXml,
+        }),
         ...(data.attributeMapping !== undefined && {
           attributeMapping: data.attributeMapping as object,
         }),

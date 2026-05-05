@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AuthEventType } from '../generated/prisma/client';
+import { AuthEventType } from '@prisma/client';
 import { PrismaService } from '../database';
 
 type AuthEventTypeInput =

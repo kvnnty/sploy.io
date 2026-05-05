@@ -4,7 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { OrgRole } from '../generated/prisma/client';
+import { OrgRole } from '@prisma/client';
 import type { AuthUser } from '../auth';
 import { PrismaService } from '../database';
 
@@ -99,7 +99,9 @@ export class BootstrapService {
         select: { id: true },
       });
       if (slugTaken) {
-        throw new ConflictException(`Organization slug "${opts.orgSlug}" is taken`);
+        throw new ConflictException(
+          `Organization slug "${opts.orgSlug}" is taken`,
+        );
       }
 
       const newOrg = await this.prisma.organization.create({
