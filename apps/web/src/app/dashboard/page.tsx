@@ -37,14 +37,10 @@ export default async function DashboardPage() {
       {!apiAvailable ? (
         <Card className="border-border bg-muted/30 ring-border">
           <CardHeader>
-            <CardTitle>Connect the API</CardTitle>
+            <CardTitle>Unable to load workspace</CardTitle>
             <CardDescription>
-              The dashboard loads your organization and data sources from the NestJS
-              backend. Start it on port 8080 or set{' '}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                NEXT_PUBLIC_API_URL
-              </code>
-              .
+              We could not reach the service to load your workspace. Try again in a
+              moment, or contact support if this continues.
             </CardDescription>
           </CardHeader>
         </Card>

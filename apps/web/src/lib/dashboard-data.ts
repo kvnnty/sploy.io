@@ -24,7 +24,7 @@ function pickOrgId(
 
 export type DashboardLoadResult = {
   user: { id: string; email?: string };
-  accessToken: string;
+  accessToken: string | null;
   me: AuthMeResponse;
   orgs: OrgMembership[];
   activeOrgId: string | null;
@@ -37,7 +37,6 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
 
   const { getToken } = await auth();
   const accessToken = await getToken();
-  if (!accessToken) redirect('/auth/login');
 
   let me: AuthMeResponse = {
     authUserId: user.id,
@@ -49,21 +48,23 @@ export const loadDashboardData = cache(async (): Promise<DashboardLoadResult> =>
   let orgs: OrgMembership[] = [];
   let apiAvailable = false;
 
-  try {
-    me = await apiFetchServer<AuthMeResponse>('/auth/me', accessToken);
-    apiAvailable = true;
-    if (me.internalUserId) {
-      try {
-        orgs = await apiFetchServer<OrgMembership[]>(
-          '/auth/orgs',
-          accessToken,
-        );
-      } catch {
-        orgs = [];
+  if (accessToken) {
+    try {
+      me = await apiFetchServer<AuthMeResponse>('/auth/me', accessToken);
+      apiAvailable = true;
+      if (me.internalUserId) {
+        try {
+          orgs = await apiFetchServer<OrgMembership[]>(
+            '/auth/orgs',
+            accessToken,
+          );
+        } catch {
+          orgs = [];
+        }
       }
+    } catch {
+      apiAvailable = false;
     }
-  } catch {
-    apiAvailable = false;
   }
 
   const cookieStore = await cookies();

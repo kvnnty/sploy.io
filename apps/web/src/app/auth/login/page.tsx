@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useSignIn } from '@clerk/nextjs';
+import { useClerk, useSignIn } from '@clerk/nextjs';
 import { OAuthLastUsedBadge } from '@/components/auth/oauth-last-used-badge';
 import Logo from '@/components/shared/logo';
 import { formatClerkError } from '@/lib/clerk-errors';
 import { useLastOAuthStrategy, type OAuthStrategy } from '@/lib/last-oauth-strategy';
 
 export default function LoginPage() {
+  const { loaded: clerkLoaded } = useClerk();
   const { signIn } = useSignIn();
   const { lastStrategy, rememberStrategy } = useLastOAuthStrategy();
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function signInWithOAuth(strategy: OAuthStrategy) {
-    if (!signIn) return;
+    if (!clerkLoaded || !signIn) return;
     rememberStrategy(strategy);
     setError(null);
     const { error } = await signIn.sso({
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
   async function signInWithMagicLink(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !signIn) return;
+    if (!email || !clerkLoaded || !signIn) return;
     setLoading(true);
     setError(null);
 
@@ -87,7 +88,8 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_google')}
-            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            disabled={!clerkLoaded}
+            className="relative flex w-full items-center justify-between gap-2 cursor-pointer rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
@@ -104,7 +106,8 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_microsoft')}
-            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            disabled={!clerkLoaded}
+            className="relative flex w-full items-center justify-between gap-2 cursor-pointer rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 21 21">
@@ -131,7 +134,7 @@ export default function LoginPage() {
         <form onSubmit={signInWithMagicLink} className="space-y-3">
           <input
             type="email"
-            placeholder="you@company.com"
+            placeholder="johndoe@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -140,7 +143,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-lg bg-primary cursor-pointer px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Send magic link'}
           </button>
@@ -164,7 +167,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-foreground/50">
           New here?{' '}
-          <Link href="/auth/sign-up" className="text-foreground hover:text-foreground/80 underline-offset-4 hover:underline">
+          <Link href="/auth/sign-up" className="text-foreground hover:text-foreground/80 underline-offset-5 hover:underline">
             Create an account
           </Link>
         </p>
