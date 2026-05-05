@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Logo() {
+export default function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   return (
     <Link
       href="/"
@@ -12,16 +12,16 @@ export default function Logo() {
       <Image
         src="/sploylogo-dark.svg"
         alt="Sploy"
-        width={410}
-        height={85}
+        width={size === 'sm' ? 205 : size === 'md' ? 410 : 820}
+        height={size === 'sm' ? 42.5 : size === 'md' ? 85 : 170}
         className="h-9 w-28 sm:h-10 sm:w-32 dark:hidden"
         priority
       />
       <Image
         src="/sploylogo-white.svg"
         alt="Sploy"
-        width={410}
-        height={85}
+        width={size === 'sm' ? 205 : size === 'md' ? 410 : 820}
+        height={size === 'sm' ? 42.5 : size === 'md' ? 85 : 170}
         className="hidden h-9 w-28 sm:h-10 sm:w-32 dark:block"
         priority
       />

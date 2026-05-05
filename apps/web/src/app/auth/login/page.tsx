@@ -23,8 +23,8 @@ export default function LoginPage() {
     setError(null);
     const { error } = await signIn.sso({
       strategy,
-      redirectUrl: '/auth/sso-callback',
-      redirectCallbackUrl: '/dashboard',
+      redirectUrl: '/dashboard',
+      redirectCallbackUrl: '/auth/sso-callback',
     });
     if (error) setError(formatClerkError(error));
   }
@@ -79,7 +79,7 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -145,7 +145,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-primary cursor-pointer px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? 'Sending...' : 'Send magic link'}
+            {loading ? 'Please wait...' : 'Send magic link'}
           </button>
         </form>
 

@@ -92,7 +92,7 @@ export function WaitlistForm({ onSuccessChange }: FormProps) {
           particleCount: 120,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ["#55b3ff", "#5fc992", "#ff6363", "#f9f9f9"],
+          colors: ["#e5ff00", "#9fcc00", "#0d9488", "#f9f9f9"],
         });
       }, 150);
 

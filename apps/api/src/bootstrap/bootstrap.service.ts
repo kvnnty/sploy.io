@@ -4,18 +4,18 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { OrgRole } from '@prisma/client';
+import { TeamRole } from '@prisma/client';
 import type { AuthUser } from '../auth';
 import { PrismaService } from '../database';
 
 export interface BootstrapResult {
   userId: string;
   email: string;
-  orgId: string | null;
-  orgSlug: string | null;
+  teamId: string | null;
+  teamSlug: string | null;
   role: string | null;
   isNewUser: boolean;
-  isNewOrg: boolean;
+  isNewTeam: boolean;
 }
 
 @Injectable()
@@ -24,12 +24,35 @@ export class BootstrapService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  private toSlug(value: string): string {
+    const base = value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40);
+    return base || 'team';
+  }
+
+  private async buildUniqueTeamSlug(seed: string): Promise<string> {
+    const base = this.toSlug(seed);
+    for (let i = 0; i < 50; i += 1) {
+      const candidate = i === 0 ? base : `${base}-${i + 1}`;
+      const exists = await this.prisma.team.findFirst({
+        where: { slug: candidate },
+        select: { id: true },
+      });
+      if (!exists) return candidate;
+    }
+    return `${base}-${Date.now().toString(36)}`;
+  }
+
   async bootstrap(
     authUser: AuthUser,
-    opts: { displayName?: string; orgName?: string; orgSlug?: string },
+    opts: { displayName?: string; teamName?: string; teamSlug?: string },
   ): Promise<BootstrapResult> {
     let isNewUser = false;
-    let isNewOrg = false;
+    let isNewTeam = false;
 
     let user = await this.prisma.user.findFirst({
       where: { authUserId: authUser.authUserId },
@@ -55,118 +78,137 @@ export class BootstrapService {
     const membership = await this.prisma.membership.findFirst({
       where: { userId },
       orderBy: { createdAt: 'asc' },
-      include: { org: true },
+      include: { team: true },
     });
 
     if (membership) {
       return {
         userId,
         email: authUser.email,
-        orgId: membership.orgId,
-        orgSlug: membership.org.slug,
+        teamId: membership.teamId,
+        teamSlug: membership.team.slug,
         role: membership.role,
         isNewUser,
-        isNewOrg: false,
+        isNewTeam: false,
       };
     }
 
     const emailDomain = authUser.email.split('@')[1];
-    const domainOrg = emailDomain
-      ? await this.prisma.organization.findFirst({
+    const domainTeam = emailDomain
+      ? await this.prisma.team.findFirst({
           where: { domain: emailDomain },
         })
       : null;
 
-    if (domainOrg) {
+    if (domainTeam) {
       await this.prisma.membership.createMany({
-        data: [{ userId, orgId: domainOrg.id, role: OrgRole.member }],
+        data: [{ userId, teamId: domainTeam.id, role: TeamRole.member }],
         skipDuplicates: true,
       });
       return {
         userId,
         email: authUser.email,
-        orgId: domainOrg.id,
-        orgSlug: domainOrg.slug,
+        teamId: domainTeam.id,
+        teamSlug: domainTeam.slug,
         role: 'member',
         isNewUser,
-        isNewOrg: false,
+        isNewTeam: false,
       };
     }
 
-    if (opts.orgName && opts.orgSlug) {
-      const slugTaken = await this.prisma.organization.findFirst({
-        where: { slug: opts.orgSlug },
+    if (opts.teamName && opts.teamSlug) {
+      const slugTaken = await this.prisma.team.findFirst({
+        where: { slug: opts.teamSlug },
         select: { id: true },
       });
       if (slugTaken) {
         throw new ConflictException(
-          `Organization slug "${opts.orgSlug}" is taken`,
+          `Team slug "${opts.teamSlug}" is taken`,
         );
       }
 
-      const newOrg = await this.prisma.organization.create({
+      const newTeam = await this.prisma.team.create({
         data: {
-          name: opts.orgName,
-          slug: opts.orgSlug,
+          name: opts.teamName,
+          slug: opts.teamSlug,
           memberships: {
-            create: { userId, role: OrgRole.owner },
+            create: { userId, role: TeamRole.owner },
           },
         },
       });
-      isNewOrg = true;
+      isNewTeam = true;
 
       return {
         userId,
         email: authUser.email,
-        orgId: newOrg.id,
-        orgSlug: opts.orgSlug,
+        teamId: newTeam.id,
+        teamSlug: opts.teamSlug,
         role: 'owner',
         isNewUser,
-        isNewOrg,
+        isNewTeam,
       };
     }
+
+    const displayBase =
+      opts.displayName?.trim() ||
+      user?.displayName?.trim() ||
+      authUser.email.split('@')[0].trim() ||
+      'User';
+    const defaultTeamName = `${displayBase}'s Team`;
+    const defaultTeamSlug = await this.buildUniqueTeamSlug(defaultTeamName);
+
+    const personalTeam = await this.prisma.team.create({
+      data: {
+        name: defaultTeamName,
+        slug: defaultTeamSlug,
+        memberships: {
+          create: { userId, role: TeamRole.owner },
+        },
+      },
+    });
+    isNewTeam = true;
 
     return {
       userId,
       email: authUser.email,
-      orgId: null,
-      orgSlug: null,
-      role: null,
+      teamId: personalTeam.id,
+      teamSlug: personalTeam.slug,
+      role: TeamRole.owner,
       isNewUser,
-      isNewOrg,
+      isNewTeam,
     };
   }
 
-  async switchOrg(
+  async switchTeam(
     userId: string,
-    orgId: string,
-  ): Promise<{ orgId: string; orgSlug: string; role: string }> {
+    teamId: string,
+  ): Promise<{ teamId: string; teamSlug: string; role: string }> {
     const membership = await this.prisma.membership.findFirst({
-      where: { userId, orgId },
-      include: { org: true },
+      where: { userId, teamId },
+      include: { team: true },
     });
 
     if (!membership) {
-      throw new ForbiddenException('Not a member of this organization');
+      throw new ForbiddenException('Not a member of this team');
     }
 
     return {
-      orgId: membership.orgId,
-      orgSlug: membership.org.slug,
+      teamId: membership.teamId,
+      teamSlug: membership.team.slug,
       role: membership.role,
     };
   }
 
-  async listOrgs(userId: string) {
+  async listTeams(userId: string) {
     const rows = await this.prisma.membership.findMany({
       where: { userId },
-      include: { org: true },
-      orderBy: { org: { name: 'asc' } },
+      include: { team: true },
+      orderBy: { team: { name: 'asc' } },
     });
     return rows.map((m) => ({
-      org_id: m.orgId,
-      name: m.org.name,
-      slug: m.org.slug,
+      team_id: m.teamId,
+      name: m.team.name,
+      slug: m.team.slug,
       role: m.role,
     }));
   }

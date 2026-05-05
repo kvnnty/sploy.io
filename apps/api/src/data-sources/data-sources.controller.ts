@@ -8,8 +8,8 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { OrgRole } from '@prisma/client';
-import { OrgMemberGuard } from '../auth/guards/org-member.guard';
+import { TeamRole } from '@prisma/client';
+import { TeamMemberGuard } from '../auth/guards/team-member.guard';
 import { Roles } from '../auth';
 import { DataSourcesService } from './data-sources.service';
 import {
@@ -19,8 +19,8 @@ import {
 } from './dto/data-sources.dto';
 import { NlSqlService } from '../query/nl-sql.service';
 
-@Controller('orgs/:orgId/data-sources')
-@UseGuards(OrgMemberGuard)
+@Controller('teams/:teamId/data-sources')
+@UseGuards(TeamMemberGuard)
 export class DataSourcesController {
   constructor(
     private readonly dataSources: DataSourcesService,
@@ -28,55 +28,55 @@ export class DataSourcesController {
   ) {}
 
   @Post()
-  @Roles(OrgRole.owner, OrgRole.admin)
+  @Roles(TeamRole.owner, TeamRole.admin)
   create(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
     @Body() dto: CreateDataSourceDto,
   ) {
-    return this.dataSources.create(orgId, dto);
+    return this.dataSources.create(teamId, dto);
   }
 
   @Get()
-  list(@Param('orgId', ParseUUIDPipe) orgId: string) {
-    return this.dataSources.listForOrg(orgId);
+  list(@Param('teamId', ParseUUIDPipe) teamId: string) {
+    return this.dataSources.listForTeam(teamId);
   }
 
   @Delete(':dataSourceId')
-  @Roles(OrgRole.owner, OrgRole.admin)
+  @Roles(TeamRole.owner, TeamRole.admin)
   remove(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
   ) {
-    return this.dataSources.delete(orgId, dataSourceId);
+    return this.dataSources.delete(teamId, dataSourceId);
   }
 
   @Post(':dataSourceId/test')
   test(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
   ) {
-    return this.dataSources.testConnection(orgId, dataSourceId);
+    return this.dataSources.testConnection(teamId, dataSourceId);
   }
 
   @Post(':dataSourceId/query')
   runQuery(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() dto: RunQueryDto,
   ) {
-    return this.dataSources.runQuery(orgId, dataSourceId, dto.sql);
+    return this.dataSources.runQuery(teamId, dataSourceId, dto.sql);
   }
 
   @Post(':dataSourceId/ask')
   async ask(
-    @Param('orgId', ParseUUIDPipe) orgId: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() dto: AskDto,
   ) {
     const sql =
       dto.sql?.trim() ||
       (await this.nlSql.questionToSelectSql(dto.question, dto.schemaHint));
-    const result = await this.dataSources.runQuery(orgId, dataSourceId, sql);
+    const result = await this.dataSources.runQuery(teamId, dataSourceId, sql);
     return { sql, ...result };
   }
 }

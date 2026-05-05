@@ -27,7 +27,7 @@ export class UserResolutionService {
     return {
       ...authUser,
       internalUserId: user.id,
-      activeOrgId: m?.orgId ?? undefined,
+      activeTeamId: m?.teamId ?? undefined,
       role: m?.role ?? undefined,
     };
   }

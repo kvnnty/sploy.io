@@ -19,8 +19,8 @@ export default function SSOPage() {
     const { error } = await signIn.sso({
       strategy: 'enterprise_sso',
       identifier: domain,
-      redirectUrl: '/auth/sso-callback',
-      redirectCallbackUrl: '/dashboard',
+      redirectUrl: '/dashboard',
+      redirectCallbackUrl: '/auth/sso-callback',
     });
 
     if (error) {
@@ -40,7 +40,7 @@ export default function SSOPage() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}

@@ -24,25 +24,25 @@ function slugify(name: string): string {
   return s.slice(0, 50) || 'team';
 }
 
-export function OrgOnboarding({ email }: { email: string }) {
+export function TeamOnboarding({ email }: { email: string }) {
   const { getToken } = useAuth();
   const router = useRouter();
-  const [orgName, setOrgName] = useState('');
-  const [orgSlug, setOrgSlug] = useState('');
+  const [teamName, setTeamName] = useState('');
+  const [teamSlug, setTeamSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function onNameChange(name: string) {
-    setOrgName(name);
-    if (!slugTouched) setOrgSlug(slugify(name));
+    setTeamName(name);
+    if (!slugTouched) setTeamSlug(slugify(name));
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const name = orgName.trim() || 'My organization';
-    const slug = (orgSlug.trim() || slugify(name)).toLowerCase();
+    const name = teamName.trim() || 'My team';
+    const slug = (teamSlug.trim() || slugify(name)).toLowerCase();
     if (!/^[a-z0-9-]+$/.test(slug)) {
       setError('Slug must be lowercase letters, numbers, and hyphens only.');
       return;
@@ -55,13 +55,13 @@ export function OrgOnboarding({ email }: { email: string }) {
         method: 'POST',
         body: JSON.stringify({
           displayName: email.split('@')[0],
-          orgName: name,
-          orgSlug: slug,
+          teamName: name,
+          teamSlug: slug,
         }),
       });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create organization');
+      setError(err instanceof Error ? err.message : 'Could not create team');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export function OrgOnboarding({ email }: { email: string }) {
       <CardHeader>
         <CardTitle>Set up your workspace</CardTitle>
         <CardDescription>
-          Create an organization to connect data sources and run decision-focused
+          Create a team to connect data sources and run decision-focused
           analysis. You can invite teammates later.
         </CardDescription>
       </CardHeader>
@@ -84,27 +84,27 @@ export function OrgOnboarding({ email }: { email: string }) {
             </p>
           ) : null}
           <div className="space-y-1.5">
-            <label htmlFor="org-name" className="text-xs font-medium text-muted-foreground">
-              Organization name
+            <label htmlFor="team-name" className="text-xs font-medium text-muted-foreground">
+              Team name
             </label>
             <input
-              id="org-name"
-              value={orgName}
+              id="team-name"
+              value={teamName}
               onChange={(e) => onNameChange(e.target.value)}
               placeholder="Acme Inc."
               className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="org-slug" className="text-xs font-medium text-muted-foreground">
+            <label htmlFor="team-slug" className="text-xs font-medium text-muted-foreground">
               URL slug
             </label>
             <input
-              id="org-slug"
-              value={orgSlug}
+              id="team-slug"
+              value={teamSlug}
               onChange={(e) => {
                 setSlugTouched(true);
-                setOrgSlug(e.target.value.toLowerCase());
+                setTeamSlug(e.target.value.toLowerCase());
               }}
               placeholder="acme-inc"
               className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"

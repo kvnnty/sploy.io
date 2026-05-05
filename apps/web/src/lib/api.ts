@@ -4,12 +4,12 @@ export type AuthMeResponse = {
   authUserId: string;
   email: string;
   internalUserId: string | null;
-  activeOrgId?: string | null;
+  activeTeamId?: string | null;
   role?: string | null;
 };
 
-export type OrgMembership = {
-  org_id: string;
+export type TeamMembership = {
+  team_id: string;
   name: string;
   slug: string;
   role: string;
@@ -17,7 +17,7 @@ export type OrgMembership = {
 
 export type DataSourceSummary = {
   id: string;
-  orgId: string;
+  teamId: string;
   name: string;
   kind: string;
   host: string;

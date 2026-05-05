@@ -1,7 +1,8 @@
 export interface AuthUser {
   authUserId: string;
   email: string;
+  sessionId?: string;
   internalUserId?: string;
-  activeOrgId?: string;
+  activeTeamId?: string;
   role?: string;
 }

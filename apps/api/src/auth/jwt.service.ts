@@ -25,13 +25,18 @@ export class JwtService {
       });
 
       const sub = payload.sub;
-      const email = (payload as Record<string, unknown>).email as string | undefined;
+      const email = (payload as Record<string, unknown>).email as
+        | string
+        | undefined;
+      const sessionId = (payload as Record<string, unknown>).sid as
+        | string
+        | undefined;
 
       if (!sub || !email) {
         throw new UnauthorizedException('Token missing required claims');
       }
 
-      return { authUserId: sub, email };
+      return { authUserId: sub, email, sessionId };
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       this.logger.warn(`JWT verification failed: ${error}`);

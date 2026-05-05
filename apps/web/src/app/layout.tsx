@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist_Mono, Inter } from "next/font/google";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { ThemeAwareToaster } from "@/components/theme-aware-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
@@ -34,6 +35,7 @@ export default function RootLayout({
         <body
           className={`${inter.variable} ${geistMono.variable} min-h-screen bg-background font-sans text-foreground overflow-x-hidden`}
         >
+          <NavigationProgress />
           <ThemeProvider>
             <ThemeAwareToaster />
             {children}

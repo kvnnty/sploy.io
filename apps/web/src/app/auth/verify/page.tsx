@@ -36,7 +36,7 @@ export default function VerifyPage() {
         )}
         {status === 'error' && (
           <>
-            <p className="text-sm text-red-400">Verification failed or the link has expired.</p>
+            <p className="text-sm text-destructive">Verification failed or the link has expired.</p>
             <a href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground">
               Try again
             </a>

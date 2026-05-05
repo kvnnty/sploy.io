@@ -8,12 +8,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const options = [
+  { value: "system" as const, label: "System", Icon: Monitor },
   { value: "light" as const, label: "Light", Icon: Sun },
   { value: "dark" as const, label: "Dark", Icon: Moon },
-  { value: "system" as const, label: "System", Icon: Monitor },
 ];
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({
+  className,
+  labeled = false,
+}: {
+  className?: string;
+  /** Icon + text segments (e.g. profile menu) */
+  labeled?: boolean;
+}) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -25,12 +32,14 @@ export function ThemeToggle({ className }: { className?: string }) {
     return (
       <div
         className={cn(
-          "inline-flex h-9 shrink-0 rounded-lg border border-border bg-muted/40 p-0.5",
+          labeled
+            ? "flex h-10 w-full rounded-lg border border-border bg-muted/50 p-0.5"
+            : "inline-flex h-9 shrink-0 rounded-lg border border-border bg-muted/40 p-0.5",
           className,
         )}
         aria-hidden
       >
-        <span className="size-8" />
+        <span className={labeled ? "flex-1" : "size-8"} />
       </div>
     );
   }
@@ -38,7 +47,9 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 rounded-lg border border-border bg-muted/40 p-0.5",
+        labeled
+          ? "flex w-full rounded-lg border border-border bg-muted/50 p-0.5"
+          : "inline-flex shrink-0 rounded-lg border border-border bg-muted/40 p-0.5",
         className,
       )}
       role="group"
@@ -49,17 +60,23 @@ export function ThemeToggle({ className }: { className?: string }) {
           key={value}
           type="button"
           variant="ghost"
-          size="icon"
+          size={labeled ? "default" : "icon"}
           className={cn(
-            "size-8 shrink-0 rounded-md",
-            theme === value && "bg-background text-foreground shadow-sm",
+            "shrink-0 rounded-md font-normal",
+            labeled
+              ? "h-9 min-h-9 flex-1 gap-1.5 px-1.5 text-xs font-medium text-muted-foreground sm:px-2"
+              : "size-8",
+            theme === value &&
+              (labeled
+                ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+                : "bg-background text-foreground shadow-sm"),
           )}
           onClick={() => setTheme(value)}
           aria-pressed={theme === value}
           title={label}
         >
-          <Icon className="size-4" aria-hidden />
-          <span className="sr-only">{label}</span>
+          <Icon className={cn(labeled ? "size-3.5 shrink-0" : "size-4")} aria-hidden />
+          {labeled ? <span>{label}</span> : <span className="sr-only">{label}</span>}
         </Button>
       ))}
     </div>

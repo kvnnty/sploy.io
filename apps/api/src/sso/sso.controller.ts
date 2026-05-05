@@ -47,8 +47,8 @@ export class SsoController {
 
   @Get('connections')
   async list(@CurrentUser() user: AuthUser) {
-    if (!user.activeOrgId) return [];
-    return this.ssoService.listConnections(user.activeOrgId);
+    if (!user.activeTeamId) return [];
+    return this.ssoService.listConnections(user.activeTeamId);
   }
 
   @Patch('connections/:id')

@@ -1,4 +1,4 @@
-model Organization {
+model Team {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   slug      String   @unique
@@ -11,7 +11,8 @@ model Organization {
   ssoConnections SsoConnection[]
   dataSources    DataSource[]
   authEvents     AuthEvent[]
+  invitations    Invitation[]
 
-  @@map("organizations")
+  @@map("teams")
   @@schema("core")
 }

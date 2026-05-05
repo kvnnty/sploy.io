@@ -11,7 +11,7 @@ import { CurrentUser, type AuthUser } from '../auth';
 import { RateLimitGuard, RateLimit } from '../auth/guards/rate-limit.guard';
 import { AuditService } from '../audit';
 import { BootstrapService } from './bootstrap.service';
-import { BootstrapDto, SwitchOrgDto } from './dto/bootstrap.dto';
+import { BootstrapDto, SwitchTeamDto } from './dto/bootstrap.dto';
 import type { Request } from 'express';
 
 @Controller('auth')
@@ -31,25 +31,25 @@ export class BootstrapController {
   ) {
     const result = await this.bootstrapService.bootstrap(user, {
       displayName: dto.displayName,
-      orgName: dto.orgName,
-      orgSlug: dto.orgSlug,
+      teamName: dto.teamName,
+      teamSlug: dto.teamSlug,
     });
 
     if (result.isNewUser) {
       await this.audit.log({
         eventType: 'user_bootstrapped',
         userId: result.userId,
-        orgId: result.orgId,
+        teamId: result.teamId,
         ipAddress: req.ip ?? null,
         userAgent: req.headers['user-agent'] ?? null,
         metadata: { email: user.email },
       });
     }
-    if (result.isNewOrg) {
+    if (result.isNewTeam) {
       await this.audit.log({
-        eventType: 'org_created',
+        eventType: 'team_created',
         userId: result.userId,
-        orgId: result.orgId,
+        teamId: result.teamId,
         ipAddress: req.ip ?? null,
         userAgent: req.headers['user-agent'] ?? null,
       });
@@ -58,23 +58,23 @@ export class BootstrapController {
     return result;
   }
 
-  @Post('switch-org')
-  async switchOrg(
+  @Post('switch-team')
+  async switchTeam(
     @CurrentUser() user: AuthUser,
-    @Body() dto: SwitchOrgDto,
+    @Body() dto: SwitchTeamDto,
   ) {
     if (!user.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    return this.bootstrapService.switchOrg(user.internalUserId, dto.orgId);
+    return this.bootstrapService.switchTeam(user.internalUserId, dto.teamId);
   }
 
-  @Get('orgs')
-  async listOrgs(@CurrentUser() user: AuthUser) {
+  @Get('teams')
+  async listTeams(@CurrentUser() user: AuthUser) {
     if (!user.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    return this.bootstrapService.listOrgs(user.internalUserId);
+    return this.bootstrapService.listTeams(user.internalUserId);
   }
 
   @Get('me')
@@ -83,7 +83,7 @@ export class BootstrapController {
       authUserId: user.authUserId,
       email: user.email,
       internalUserId: user.internalUserId,
-      activeOrgId: user.activeOrgId,
+      activeTeamId: user.activeTeamId,
       role: user.role,
     };
   }
