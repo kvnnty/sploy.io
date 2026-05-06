@@ -11,5 +11,4 @@ model NotificationPreference {
 
   @@unique([userId, category], map: "uq_notification_pref_user_category")
   @@map("notification_preferences")
-  @@schema("core")
 }

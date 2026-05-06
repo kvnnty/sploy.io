@@ -1,26 +1,16 @@
 'use client';
 
 import { AlertTriangle, Monitor, Smartphone } from 'lucide-react';
-import { useAuth } from '@clerk/nextjs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiFetchWithToken } from '@/lib/api';
-
-type SessionInfo = {
-  id: string;
-  ipAddress: string | null;
-  userAgent: string | null;
-  device: string;
-  browser: string;
-  location: {
-    city: string | null;
-    country: string | null;
-  };
-  lastActiveAt: string;
-  current: boolean;
-};
+import type { SessionInfo } from '@/types';
+import {
+  useRevokeOtherSessionsMutation,
+  useRevokeSessionMutation,
+  useSessionsQuery,
+} from '@/hooks/useSessions';
 
 function formatLocation(session: SessionInfo) {
   if (session.location.city && session.location.country) {
@@ -30,61 +20,29 @@ function formatLocation(session: SessionInfo) {
 }
 
 export function SessionsList() {
-  const { getToken } = useAuth();
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [busyOthers, setBusyOthers] = useState(false);
+  const sessionsQuery = useSessionsQuery();
+  const revokeOne = useRevokeSessionMutation();
+  const revokeOthers = useRevokeOtherSessionsMutation();
 
-  const currentSession = useMemo(() => sessions.find((s) => s.current), [sessions]);
+  const sessions = sessionsQuery.data ?? [];
+  const loading = sessionsQuery.isPending;
+  const error = sessionsQuery.isError
+    ? 'Could not load active sessions.'
+    : null;
 
-  const loadSessions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = await getToken();
-      if (!token) {
-        setSessions([]);
-        return;
-      }
-      const data = await apiFetchWithToken<SessionInfo[]>('/sessions', token);
-      setSessions(data);
-    } catch {
-      setError('Could not load active sessions.');
-    } finally {
-      setLoading(false);
-    }
-  }, [getToken]);
-
-  useEffect(() => {
-    void loadSessions();
-  }, [loadSessions]);
+  const currentSession = useMemo(() => {
+    const list = sessionsQuery.data ?? [];
+    return list.find((s) => s.current);
+  }, [sessionsQuery.data]);
 
   async function handleLogoutSession(id: string) {
-    setBusyId(id);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken(`/sessions/${id}`, token, { method: 'DELETE' });
-      await loadSessions();
-    } finally {
-      setBusyId(null);
-    }
+    await revokeOne.mutateAsync(id);
   }
 
   async function handleLogoutOthers() {
     const ok = window.confirm('Log out of all other sessions? This keeps your current device signed in.');
     if (!ok) return;
-    setBusyOthers(true);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken('/sessions/others', token, { method: 'DELETE' });
-      await loadSessions();
-    } finally {
-      setBusyOthers(false);
-    }
+    await revokeOthers.mutateAsync();
   }
 
   return (
@@ -99,10 +57,10 @@ export function SessionsList() {
             type="button"
             variant="outline"
             size="sm"
-            disabled={busyOthers || sessions.length <= 1}
-            onClick={handleLogoutOthers}
+            disabled={revokeOthers.isPending || sessions.length <= 1}
+            onClick={() => void handleLogoutOthers()}
           >
-            {busyOthers ? 'Logging out…' : 'Log out of all other sessions'}
+            {revokeOthers.isPending ? 'Logging out…' : 'Log out of all other sessions'}
           </Button>
         </div>
       </CardHeader>
@@ -118,6 +76,7 @@ export function SessionsList() {
             {sessions.map((session) => {
               const isCurrent = session.current;
               const Icon = /mobile|tablet/i.test(session.device) ? Smartphone : Monitor;
+              const busyOne = revokeOne.isPending && revokeOne.variables === session.id;
               return (
                 <div
                   key={session.id}
@@ -141,10 +100,10 @@ export function SessionsList() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={isCurrent || busyId === session.id}
-                      onClick={() => handleLogoutSession(session.id)}
+                      disabled={isCurrent || busyOne}
+                      onClick={() => void handleLogoutSession(session.id)}
                     >
-                      {busyId === session.id ? 'Logging out…' : 'Log out'}
+                      {busyOne ? 'Logging out…' : 'Log out'}
                     </Button>
                   </div>
                 </div>

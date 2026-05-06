@@ -11,5 +11,4 @@ model TeamActivity {
 
   @@index([teamId, createdAt(sort: Desc)], map: "idx_team_activity_team_created")
   @@map("team_activities")
-  @@schema("core")
 }

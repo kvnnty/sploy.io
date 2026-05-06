@@ -1,10 +1,20 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Card,
   CardContent,
@@ -12,43 +22,30 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { apiFetchWithToken, apiUploadFile } from '@/lib/api';
 import { TeamAvatar } from '@/components/shared/team-avatar';
 import { CreateTeamDialog } from '@/components/dashboard/create-team-dialog';
-
-type TeamInfo = { id: string; name: string; slug: string; logoUrl?: string | null };
-
-type MemberInfo = {
-  id: string;
-  userId: string;
-  email: string;
-  displayName: string | null;
-  role: 'owner' | 'admin' | 'member';
-};
-
-type InviteInfo = {
-  id: string;
-  email: string;
-  role: string;
-  status: string;
-  createdAt: string;
-};
-
-type IncomingInvite = {
-  id: string;
-  teamId: string;
-  teamName: string;
-  role: string;
-  createdAt: string;
-};
-
-type ActivityEntry = {
-  id: string;
-  type: string;
-  actorName: string | null;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-};
+import { queryKeys } from '@/lib/query-keys';
+import {
+  useCancelTeamInviteMutation,
+  useDeleteTeamMutation,
+  useInviteTeamMemberMutation,
+  useRemoveTeamMemberMutation,
+  useResendTeamInviteMutation,
+  useRespondTeamInviteMutation,
+  useTeamSettingsQueries,
+  useTransferTeamOwnershipMutation,
+  useUpdateMemberRoleMutation,
+  useUpdateTeamLogoMutation,
+  useUpdateTeamMutation,
+} from '@/hooks/useTeams';
+import type {
+  IncomingTeamInvite,
+  TeamActivityEntry,
+  TeamInfo,
+  TeamInviteInfo,
+  TeamMemberInfo,
+} from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 
 const roleColors: Record<string, 'default' | 'secondary' | 'outline'> = {
   owner: 'default',
@@ -70,30 +67,30 @@ const ACTIVITY_LABELS: Record<string, string> = {
   member_left: 'left the team',
 };
 
-// ---------------------------------------------------------------------------
-// Team details with inline rename + delete
-// ---------------------------------------------------------------------------
 function TeamDetailsCard({
   team,
   canRename,
   canDelete,
-  onRefresh,
 }: {
   team: TeamInfo;
   canRename: boolean;
   canDelete: boolean;
-  onRefresh: () => void;
 }) {
-  const { getToken } = useAuth();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(team.name);
-  const [saving, setSaving] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const updateTeam = useUpdateTeamMutation();
+  const updateLogo = useUpdateTeamLogoMutation();
+  const deleteTeam = useDeleteTeamMutation();
+
+  const saving = updateTeam.isPending;
+  const uploadingAvatar = updateLogo.isPending;
+  const deleting = deleteTeam.isPending;
+  const error =
+    (updateTeam.error ?? updateLogo.error ?? deleteTeam.error)?.message ??
+    null;
 
   useEffect(() => setName(team.name), [team.name]);
 
@@ -102,66 +99,33 @@ function TeamDetailsCard({
       setEditing(false);
       return;
     }
-    setSaving(true);
-    setError(null);
     try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken('/team', token, {
-        method: 'PATCH',
-        body: JSON.stringify({ name: name.trim() }),
-      });
+      await updateTeam.mutateAsync({ name: name.trim() });
       setEditing(false);
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to rename');
-    } finally {
-      setSaving(false);
+    } catch {
+      /* surfaced via error */
     }
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setUploadingAvatar(true);
-    setError(null);
     try {
-      const token = await getToken();
-      if (!token) return;
-      const fd = new FormData();
-      fd.append('file', file);
-      const { url } = await apiUploadFile<{ url: string }>(
-        '/uploads/team-avatar',
-        token,
-        fd,
-      );
-      await apiFetchWithToken('/team/logo', token, {
-        method: 'PATCH',
-        body: JSON.stringify({ logoUrl: url }),
-      });
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload avatar');
+      await updateLogo.mutateAsync(file);
+    } catch {
+      /* surfaced */
     } finally {
-      setUploadingAvatar(false);
       if (fileRef.current) fileRef.current.value = '';
     }
   }
 
   async function handleDelete() {
-    setDeleting(true);
-    setError(null);
     try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken('/team', token, { method: 'DELETE' });
+      await deleteTeam.mutateAsync();
       router.push('/dashboard');
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete');
-      setDeleting(false);
-      setDeleteConfirm(false);
+    } catch {
+      /* surfaced */
     }
   }
 
@@ -209,11 +173,11 @@ function TeamDetailsCard({
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+                    onKeyDown={(e) => e.key === 'Enter' && void handleRename()}
                     className="flex-1 rounded-md border border-border bg-muted/40 px-2 py-1 text-sm outline-none focus-visible:border-ring"
                     autoFocus
                   />
-                  <Button size="xs" onClick={handleRename} disabled={saving}>
+                  <Button size="xs" onClick={() => void handleRename()} disabled={saving}>
                     {saving ? 'Saving…' : 'Save'}
                   </Button>
                   <Button
@@ -251,36 +215,34 @@ function TeamDetailsCard({
         {error && <p className="text-sm text-destructive">{error}</p>}
         {canDelete && (
           <div className="border-t border-border pt-4">
-            {deleteConfirm ? (
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-destructive">
-                  Are you sure? This cannot be undone.
-                </p>
-                <Button
-                  size="xs"
-                  variant="destructive"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? 'Deleting…' : 'Confirm Delete'}
-                </Button>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => setDeleteConfirm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="xs"
-                variant="destructive"
-                onClick={() => setDeleteConfirm(true)}
+            <AlertDialog>
+              <AlertDialogTrigger
+                className="inline-flex"
+                render={<Button size="xs" variant="destructive" />}
               >
                 Delete Team
-              </Button>
-            )}
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete team?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure? This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={deleting}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void handleDelete();
+                    }}
+                  >
+                    {deleting ? 'Deleting…' : 'Confirm Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </CardContent>
@@ -288,39 +250,26 @@ function TeamDetailsCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Invite section with role picker
-// ---------------------------------------------------------------------------
-function InviteSection({ onRefresh }: { onRefresh: () => void }) {
-  const { getToken } = useAuth();
+function InviteSection() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'member' | 'admin'>('member');
-  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const invite = useInviteTeamMemberMutation();
+  const error = invite.error?.message ?? null;
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
-    setSending(true);
-    setError(null);
     setSent(false);
     try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken('/team/invite', token, {
-        method: 'POST',
-        body: JSON.stringify({ email: email.trim(), role }),
-      });
+      await invite.mutateAsync({ email: email.trim(), role });
       setSent(true);
       setEmail('');
       setRole('member');
-      onRefresh();
       setTimeout(() => setSent(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invite');
-    } finally {
-      setSending(false);
+    } catch {
+      /* error state */
     }
   }
 
@@ -349,8 +298,8 @@ function InviteSection({ onRefresh }: { onRefresh: () => void }) {
             <option value="member">Member</option>
             <option value="admin">Admin</option>
           </select>
-          <Button type="submit" disabled={sending || !email.trim()}>
-            {sent ? 'Sent!' : sending ? 'Sending…' : 'Send Invite'}
+          <Button type="submit" disabled={invite.isPending || !email.trim()}>
+            {sent ? 'Sent!' : invite.isPending ? 'Sending…' : 'Send Invite'}
           </Button>
         </form>
         {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
@@ -359,35 +308,14 @@ function InviteSection({ onRefresh }: { onRefresh: () => void }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Incoming invites for the current user
-// ---------------------------------------------------------------------------
-function IncomingInvitesCard({
-  invites,
-  onRefresh,
-}: {
-  invites: IncomingInvite[];
-  onRefresh: () => void;
-}) {
-  const { getToken } = useAuth();
-  const [busy, setBusy] = useState<string | null>(null);
+function IncomingInvitesCard({ invites }: { invites: IncomingTeamInvite[] }) {
+  const respond = useRespondTeamInviteMutation();
+  const busyId =
+    respond.isPending && respond.variables
+      ? (respond.variables as { invitationId: string }).invitationId
+      : null;
 
   if (!invites.length) return null;
-
-  async function respond(invitationId: string, action: 'accept' | 'decline') {
-    setBusy(invitationId);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken(`/team/${action}`, token, {
-        method: 'POST',
-        body: JSON.stringify({ invitationId }),
-      });
-      onRefresh();
-    } finally {
-      setBusy(null);
-    }
-  }
 
   return (
     <Card>
@@ -416,16 +344,26 @@ function IncomingInvitesCard({
               <div className="flex items-center gap-2">
                 <Button
                   size="xs"
-                  onClick={() => respond(inv.id, 'accept')}
-                  disabled={busy === inv.id}
+                  onClick={() =>
+                    respond.mutate({
+                      action: 'accept',
+                      invitationId: inv.id,
+                    })
+                  }
+                  disabled={busyId === inv.id}
                 >
                   Accept
                 </Button>
                 <Button
                   size="xs"
                   variant="outline"
-                  onClick={() => respond(inv.id, 'decline')}
-                  disabled={busy === inv.id}
+                  onClick={() =>
+                    respond.mutate({
+                      action: 'decline',
+                      invitationId: inv.id,
+                    })
+                  }
+                  disabled={busyId === inv.id}
                 >
                   Decline
                 </Button>
@@ -438,89 +376,100 @@ function IncomingInvitesCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Unified members + pending invites table
-// ---------------------------------------------------------------------------
 function MembersCard({
   members,
   invites,
   currentUserId,
   isOwner,
   canManage,
-  onRefresh,
 }: {
-  members: MemberInfo[];
-  invites: InviteInfo[];
+  members: TeamMemberInfo[];
+  invites: TeamInviteInfo[];
   currentUserId: string | null;
   isOwner: boolean;
   canManage: boolean;
-  onRefresh: () => void;
 }) {
-  const { getToken } = useAuth();
-  const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
-  async function apiCall(
-    path: string,
-    method: string,
-    body?: Record<string, unknown>,
-  ) {
-    const token = await getToken();
-    if (!token) return;
-    await apiFetchWithToken(path, token, {
-      method,
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    });
+  const updateRole = useUpdateMemberRoleMutation();
+  const removeMember = useRemoveTeamMemberMutation();
+  const transfer = useTransferTeamOwnershipMutation();
+  const resend = useResendTeamInviteMutation();
+  const cancelInv = useCancelTeamInviteMutation();
+
+  function roleBusy(memberId: string) {
+    return (
+      updateRole.isPending &&
+      (updateRole.variables as { memberId: string } | undefined)?.memberId ===
+        memberId
+    );
   }
 
+  function removeBusy(memberId: string) {
+    return (
+      removeMember.isPending &&
+      removeMember.variables === memberId
+    );
+  }
+
+  function transferBusy(memberId: string) {
+    return transfer.isPending && transfer.variables === memberId;
+  }
+
+  function pendingInviteBusy(inviteId: string) {
+    return (
+      (resend.isPending && resend.variables === inviteId) ||
+      (cancelInv.isPending && cancelInv.variables === inviteId)
+    );
+  }
+
+  const anyBusyId =
+    updateRole.isPending
+      ? (updateRole.variables as { memberId: string })?.memberId
+      : removeMember.isPending
+        ? removeMember.variables
+        : transfer.isPending
+          ? transfer.variables
+          : null;
+
   async function changeRole(memberId: string, newRole: string) {
-    setBusyId(memberId);
     try {
-      await apiCall('/team/role', 'PATCH', { memberId, role: newRole });
-      onRefresh();
-    } finally {
-      setBusyId(null);
+      await updateRole.mutateAsync({ memberId, role: newRole });
+    } catch {
+      /* noop */
     }
   }
 
-  async function removeMember(memberId: string) {
-    setBusyId(memberId);
+  async function removeMemberConfirm(memberId: string) {
     try {
-      await apiCall(`/team/member/${memberId}`, 'DELETE');
-      onRefresh();
-    } finally {
-      setBusyId(null);
+      await removeMember.mutateAsync(memberId);
       setConfirmRemove(null);
+    } catch {
+      /* noop */
     }
   }
 
   async function transferOwnership(memberId: string) {
-    setBusyId(memberId);
     try {
-      await apiCall('/team/ownership', 'PATCH', { memberId });
-      onRefresh();
-    } finally {
-      setBusyId(null);
+      await transfer.mutateAsync(memberId);
+    } catch {
+      /* noop */
     }
   }
 
   async function resendInvite(inviteId: string) {
-    setBusyId(inviteId);
     try {
-      await apiCall(`/team/invite/${inviteId}/resend`, 'POST');
-      onRefresh();
-    } finally {
-      setBusyId(null);
+      await resend.mutateAsync(inviteId);
+    } catch {
+      /* noop */
     }
   }
 
   async function cancelInvite(inviteId: string) {
-    setBusyId(inviteId);
     try {
-      await apiCall(`/team/invite/${inviteId}`, 'DELETE');
-      onRefresh();
-    } finally {
-      setBusyId(null);
+      await cancelInv.mutateAsync(inviteId);
+    } catch {
+      /* noop */
     }
   }
 
@@ -533,8 +482,7 @@ function MembersCard({
         <CardTitle>Members</CardTitle>
         <CardDescription>
           {totalCount} {totalCount === 1 ? 'person' : 'people'}
-          {pending.length > 0 &&
-            ` (${pending.length} pending)`}
+          {pending.length > 0 && ` (${pending.length} pending)`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -574,8 +522,10 @@ function MembersCard({
                     {canChangeRole ? (
                       <select
                         value={m.role}
-                        onChange={(e) => changeRole(m.id, e.target.value)}
-                        disabled={busyId === m.id}
+                        onChange={(e) =>
+                          void changeRole(m.id, e.target.value)
+                        }
+                        disabled={roleBusy(m.id)}
                         className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs text-foreground outline-none"
                       >
                         <option value="admin">Admin</option>
@@ -590,8 +540,8 @@ function MembersCard({
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => transferOwnership(m.id)}
-                        disabled={busyId === m.id}
+                        onClick={() => void transferOwnership(m.id)}
+                        disabled={transferBusy(m.id)}
                       >
                         Make Owner
                       </Button>
@@ -605,8 +555,8 @@ function MembersCard({
                           <Button
                             size="xs"
                             variant="destructive"
-                            onClick={() => removeMember(m.id)}
-                            disabled={busyId === m.id}
+                            onClick={() => void removeMemberConfirm(m.id)}
+                            disabled={removeBusy(m.id)}
                           >
                             Confirm
                           </Button>
@@ -623,7 +573,7 @@ function MembersCard({
                           size="xs"
                           variant="destructive"
                           onClick={() => setConfirmRemove(m.id)}
-                          disabled={busyId === m.id}
+                          disabled={anyBusyId === m.id}
                         >
                           Remove
                         </Button>
@@ -656,16 +606,16 @@ function MembersCard({
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => resendInvite(inv.id)}
-                        disabled={busyId === inv.id}
+                        onClick={() => void resendInvite(inv.id)}
+                        disabled={pendingInviteBusy(inv.id)}
                       >
                         Resend
                       </Button>
                       <Button
                         size="xs"
                         variant="ghost"
-                        onClick={() => cancelInvite(inv.id)}
-                        disabled={busyId === inv.id}
+                        onClick={() => void cancelInvite(inv.id)}
+                        disabled={pendingInviteBusy(inv.id)}
                       >
                         Cancel
                       </Button>
@@ -681,10 +631,7 @@ function MembersCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Activity log
-// ---------------------------------------------------------------------------
-function ActivityCard({ activity }: { activity: ActivityEntry[] }) {
+function ActivityCard({ activity }: { activity: TeamActivityEntry[] }) {
   if (!activity.length) return null;
 
   return (
@@ -722,54 +669,29 @@ function ActivityCard({ activity }: { activity: ActivityEntry[] }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 export default function TeamSettingsPage() {
-  const { getToken } = useAuth();
-  const [team, setTeam] = useState<TeamInfo | null>(null);
-  const [members, setMembers] = useState<MemberInfo[]>([]);
-  const [invites, setInvites] = useState<InviteInfo[]>([]);
-  const [incomingInvites, setIncomingInvites] = useState<IncomingInvite[]>([]);
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const queryClient = useQueryClient();
+  const teamQueries = useTeamSettingsQueries();
+  const dashboardQ = teamQueries[0];
+  const activityQ = teamQueries[1];
 
-  const loadTeam = useCallback(async () => {
-    const token = await getToken();
-    if (!token) return;
-    try {
-      const [data, activityData] = await Promise.all([
-        apiFetchWithToken<{
-          team: TeamInfo;
-          members: MemberInfo[];
-          invites: InviteInfo[];
-          incomingInvites?: IncomingInvite[];
-          currentUserId: string;
-        }>('/team', token),
-        apiFetchWithToken<ActivityEntry[]>('/team/activity', token).catch(
-          () => [] as ActivityEntry[],
-        ),
-      ]);
-      setTeam(data.team);
-      setMembers(data.members);
-      setInvites(data.invites ?? []);
-      setIncomingInvites(data.incomingInvites ?? []);
-      setCurrentUserId(data.currentUserId);
-      setActivity(activityData);
-      setLoaded(true);
-    } catch {
-      setLoaded(true);
-    }
-  }, [getToken]);
+  const loaded = !dashboardQ.isPending;
+  const data = dashboardQ.data;
+  const activity = activityQ.data ?? [];
 
-  useEffect(() => {
-    loadTeam();
-  }, [loadTeam]);
+  const refreshTeam = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.team.root });
+  };
 
   if (!loaded) {
     return <p className="text-sm text-muted-foreground">Loading team…</p>;
   }
+
+  const team = data?.team;
+  const members = data?.members ?? [];
+  const invites = data?.invites ?? [];
+  const incomingInvites = data?.incomingInvites ?? [];
+  const currentUserId = data?.currentUserId ?? null;
 
   const currentMember = members.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === 'owner';
@@ -783,7 +705,7 @@ export default function TeamSettingsPage() {
             <p className="text-sm text-muted-foreground">
               No team found. Create one to get started.
             </p>
-            <CreateTeamDialog onCreated={loadTeam} />
+            <CreateTeamDialog onCreated={refreshTeam} />
           </CardContent>
         </Card>
       </div>
@@ -796,20 +718,18 @@ export default function TeamSettingsPage() {
         team={team}
         canRename={canManage}
         canDelete={isOwner}
-        onRefresh={loadTeam}
       />
-      <IncomingInvitesCard invites={incomingInvites} onRefresh={loadTeam} />
-      {canManage && <InviteSection onRefresh={loadTeam} />}
+      <IncomingInvitesCard invites={incomingInvites} />
+      {canManage && <InviteSection />}
       <MembersCard
         members={members}
         invites={invites}
         currentUserId={currentUserId}
         isOwner={isOwner}
         canManage={canManage}
-        onRefresh={loadTeam}
       />
       <div className="flex justify-end">
-        <CreateTeamDialog onCreated={loadTeam} />
+        <CreateTeamDialog onCreated={refreshTeam} />
       </div>
       <ActivityCard activity={activity} />
     </div>

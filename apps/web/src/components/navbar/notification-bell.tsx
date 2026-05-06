@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck, ExternalLink } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import {
@@ -11,15 +10,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { useNotifications } from '@/components/notifications/notification-provider';
 import {
-  fetchNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-  type NotificationItem,
-} from '@/lib/notifications';
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
+  useNotificationPreviewQuery,
+} from '@/hooks/useNotifications';
+import { useNotifications } from '@/components/notifications/notification-provider';
+import type { NotificationItem } from '@/types/notification.types';
 import { queryKeys } from '@/lib/query-keys';
+import { cn } from '@/lib/utils';
 
 function timeAgo(dateStr: string): string {
   const seconds = Math.floor(
@@ -36,61 +35,36 @@ function timeAgo(dateStr: string): string {
 }
 
 export function NotificationBell() {
-  const { getToken } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { unreadCount, refreshCount } = useNotifications();
   const [open, setOpen] = useState(false);
 
-  const { data, isPending, isFetching } = useQuery({
-    queryKey: queryKeys.notifications.preview(),
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) return { items: [] as NotificationItem[], nextCursor: null };
-      return fetchNotifications(token, { limit: 8 });
-    },
+  const { data, isPending, isFetching } = useNotificationPreviewQuery({
     enabled: open,
-    staleTime: 10_000,
   });
 
   const items = data?.items ?? [];
   const loading = open && isPending && items.length === 0;
 
-  const markReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await markNotificationRead(token, id);
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.notifications.preview(),
-      });
-      void refreshCount();
-    },
-  });
-
-  const markAllMutation = useMutation({
-    mutationFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await markAllNotificationsRead(token);
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.notifications.preview(),
-      });
-      void refreshCount();
-    },
-  });
+  const markReadMutation = useMarkNotificationReadMutation();
+  const markAllMutation = useMarkAllNotificationsReadMutation();
 
   async function handleMarkAllRead() {
     await markAllMutation.mutateAsync();
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.notifications.preview(),
+    });
+    void refreshCount();
   }
 
   async function handleClick(notification: NotificationItem) {
     if (!notification.read) {
       await markReadMutation.mutateAsync(notification.id);
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.preview(),
+      });
+      void refreshCount();
     }
     if (notification.actionUrl) {
       setOpen(false);
@@ -126,7 +100,7 @@ export function NotificationBell() {
           {items.some((n) => !n.read) && (
             <button
               type="button"
-              onClick={handleMarkAllRead}
+              onClick={() => void handleMarkAllRead()}
               disabled={markAllMutation.isPending}
               className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
             >
@@ -206,7 +180,7 @@ export function NotificationBell() {
             className="flex w-full items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             View all notifications
-            <ExternalLink className="size-3" aria-hidden />
+            <ExternalLink className="size-3" />
           </button>
         </div>
       </PopoverContent>

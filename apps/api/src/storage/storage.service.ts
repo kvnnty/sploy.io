@@ -65,6 +65,7 @@ export class StorageService implements OnModuleInit {
         await this.client.makeBucket(this.bucket);
         this.logger.log(`Created bucket "${this.bucket}"`);
       }
+      await this.ensurePublicReadPolicy();
       this.enabled = true;
       this.logger.log(`MinIO connected → ${endpoint}:${port}/${this.bucket}`);
     } catch (err) {
@@ -122,6 +123,29 @@ export class StorageService implements OnModuleInit {
         return `teams/${scope.teamId}/avatar/${filename}`;
       case 'team-asset':
         return `teams/${scope.teamId}/assets/${filename}`;
+    }
+  }
+
+  private async ensurePublicReadPolicy(): Promise<void> {
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+        },
+      ],
+    };
+
+    try {
+      await this.client.setBucketPolicy(this.bucket, JSON.stringify(policy));
+      this.logger.log(`Applied public-read policy on bucket "${this.bucket}"`);
+    } catch (err) {
+      this.logger.warn(
+        `Could not apply public-read bucket policy for "${this.bucket}": ${err}`,
+      );
     }
   }
 }

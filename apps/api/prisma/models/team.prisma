@@ -16,5 +16,4 @@ model Team {
   activities       TeamActivity[]
 
   @@map("teams")
-  @@schema("core")
 }

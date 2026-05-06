@@ -12,14 +12,14 @@ import {
 } from '@nestjs/common';
 import { CurrentUser, type AuthUser } from '../auth';
 import { RateLimitGuard, RateLimit } from '../auth/guards/rate-limit.guard';
-import { TeamManagementService } from './team-management.service';
+import { TeamsService } from './teams.service';
 import {
   InviteDto,
   AcceptInviteDto,
   ChangeRoleDto,
   CreateTeamDto,
   RenameTeamDto,
-} from './dto/team-management.dto';
+} from './dto/teams.dto';
 
 function requireUser(user: AuthUser) {
   if (!user.internalUserId) {
@@ -36,8 +36,8 @@ function requireUser(user: AuthUser) {
 
 @Controller('team')
 @UseGuards(RateLimitGuard)
-export class TeamManagementController {
-  constructor(private readonly teamService: TeamManagementService) {}
+export class TeamsController {
+  constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
   @RateLimit({ windowMs: 60_000, maxRequests: 5 })
@@ -48,7 +48,7 @@ export class TeamManagementController {
     if (!user.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    return this.teamService.createTeam(
+    return this.teamsService.createTeam(
       user.internalUserId,
       dto.name,
       dto.slug,
@@ -59,7 +59,7 @@ export class TeamManagementController {
   @Get()
   async getTeam(@CurrentUser() user: AuthUser) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.getTeamDetails(userId, teamId);
+    return this.teamsService.getTeamDetails(userId, teamId);
   }
 
   @Patch()
@@ -69,14 +69,14 @@ export class TeamManagementController {
     @Body() dto: RenameTeamDto,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.renameTeam(userId, teamId, dto.name);
+    return this.teamsService.renameTeam(userId, teamId, dto.name);
   }
 
   @Delete()
   @RateLimit({ windowMs: 60_000, maxRequests: 5 })
   async deleteTeam(@CurrentUser() user: AuthUser) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.deleteTeam(userId, teamId);
+    return this.teamsService.deleteTeam(userId, teamId);
   }
 
   @Patch('logo')
@@ -86,7 +86,7 @@ export class TeamManagementController {
     @Body('logoUrl') logoUrl: string | null,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.updateTeamLogo(userId, teamId, logoUrl ?? null);
+    return this.teamsService.updateTeamLogo(userId, teamId, logoUrl ?? null);
   }
 
   @Post('invite')
@@ -96,7 +96,7 @@ export class TeamManagementController {
     @Body() dto: InviteDto,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.inviteUser(userId, teamId, dto.email, dto.role);
+    return this.teamsService.inviteUser(userId, teamId, dto.email, dto.role);
   }
 
   @Post('accept')
@@ -108,7 +108,7 @@ export class TeamManagementController {
     if (!user.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    return this.teamService.acceptInvite(user.internalUserId, dto.invitationId);
+    return this.teamsService.acceptInvite(user.internalUserId, dto.invitationId);
   }
 
   @Post('decline')
@@ -120,7 +120,7 @@ export class TeamManagementController {
     if (!user.internalUserId) {
       throw new UnauthorizedException('User not provisioned');
     }
-    return this.teamService.declineInvite(
+    return this.teamsService.declineInvite(
       user.internalUserId,
       dto.invitationId,
     );
@@ -133,7 +133,7 @@ export class TeamManagementController {
     @Param('id', ParseUUIDPipe) invitationId: string,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.resendInvite(userId, teamId, invitationId);
+    return this.teamsService.resendInvite(userId, teamId, invitationId);
   }
 
   @Delete('invite/:id')
@@ -143,7 +143,7 @@ export class TeamManagementController {
     @Param('id', ParseUUIDPipe) invitationId: string,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.cancelInvite(userId, teamId, invitationId);
+    return this.teamsService.cancelInvite(userId, teamId, invitationId);
   }
 
   @Patch('role')
@@ -153,7 +153,7 @@ export class TeamManagementController {
     @Body() dto: ChangeRoleDto,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.changeRole(userId, teamId, dto.memberId, dto.role);
+    return this.teamsService.changeRole(userId, teamId, dto.memberId, dto.role);
   }
 
   @Patch('ownership')
@@ -163,7 +163,7 @@ export class TeamManagementController {
     @Body('memberId', ParseUUIDPipe) memberId: string,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.transferOwnership(userId, teamId, memberId);
+    return this.teamsService.transferOwnership(userId, teamId, memberId);
   }
 
   @Delete('member/:id')
@@ -173,19 +173,19 @@ export class TeamManagementController {
     @Param('id', ParseUUIDPipe) memberId: string,
   ) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.removeMember(userId, teamId, memberId);
+    return this.teamsService.removeMember(userId, teamId, memberId);
   }
 
   @Post('leave')
   @RateLimit({ windowMs: 60_000, maxRequests: 5 })
   async leaveTeam(@CurrentUser() user: AuthUser) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.leaveTeam(userId, teamId);
+    return this.teamsService.leaveTeam(userId, teamId);
   }
 
   @Get('activity')
   async getActivity(@CurrentUser() user: AuthUser) {
     const { userId, teamId } = requireUser(user);
-    return this.teamService.getTeamActivity(userId, teamId);
+    return this.teamsService.getTeamActivity(userId, teamId);
   }
 }

@@ -10,7 +10,6 @@ enum AuthEventType {
   membership_changed
   session_revoked
 
-  @@schema("audit")
 }
 
 model AuthEvent {
@@ -27,5 +26,4 @@ model AuthEvent {
   team Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@map("auth_events")
-  @@schema("audit")
 }

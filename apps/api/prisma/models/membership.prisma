@@ -11,5 +11,4 @@ model Membership {
 
   @@unique([userId, teamId], map: "uq_membership")
   @@map("memberships")
-  @@schema("core")
 }

@@ -1,15 +1,9 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useState } from 'react';
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
 import { Bell, CheckCheck, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Card,
   CardContent,
@@ -17,20 +11,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { useNotifications } from '@/components/notifications/notification-provider';
 import {
-  fetchNotifications,
-  fetchNotificationPreferences,
-  updateNotificationPreference,
-  markNotificationRead,
-  markNotificationUnread,
-  markAllNotificationsRead,
-  deleteNotification,
-  type NotificationCategory,
-  type NotificationPreference,
-} from '@/lib/notifications';
-import { queryKeys } from '@/lib/query-keys';
+  useDeleteNotificationMutation,
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
+  useMarkNotificationUnreadMutation,
+  useNotificationHistoryInfiniteQuery,
+  useNotificationPreferencesQuery,
+  useUpdateNotificationPreferenceMutation,
+} from '@/hooks/useNotifications';
+import type {
+  NotificationCategory,
+  NotificationPreference,
+} from '@/types/notification.types';
+import { cn } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<NotificationCategory, string> = {
   account_security: 'Account & Security',
@@ -61,108 +55,19 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function NotificationsSettingsPage() {
-  const { getToken } = useAuth();
-  const queryClient = useQueryClient();
-  const { refreshCount } = useNotifications();
   const [filter, setFilter] = useState<string>('all');
 
-  const historyQuery = useInfiniteQuery({
-    queryKey: queryKeys.notifications.history(filter),
-    queryFn: async ({ pageParam }) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      const opts: {
-        cursor?: string;
-        limit: number;
-        unreadOnly?: boolean;
-        category?: string;
-      } = { limit: 20, cursor: pageParam };
-      if (filter === 'unread') opts.unreadOnly = true;
-      else if (filter !== 'all') opts.category = filter;
-      return fetchNotifications(token, opts);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.nextCursor ?? undefined,
-  });
+  const historyQuery = useNotificationHistoryInfiniteQuery(filter);
 
   const items =
     historyQuery.data?.pages.flatMap((p) => p.items) ?? [];
 
-  const prefsQuery = useQuery({
-    queryKey: queryKeys.notifications.preferences(),
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      return fetchNotificationPreferences(token);
-    },
-    staleTime: 60_000,
-  });
-
-  const invalidateNotificationQueries = () => {
-    void queryClient.invalidateQueries({
-      queryKey: queryKeys.notifications.root,
-    });
-    void refreshCount();
-  };
-
-  const markReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await markNotificationRead(token, id);
-    },
-    onSuccess: invalidateNotificationQueries,
-  });
-
-  const markUnreadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await markNotificationUnread(token, id);
-    },
-    onSuccess: invalidateNotificationQueries,
-  });
-
-  const markAllMutation = useMutation({
-    mutationFn: async () => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await markAllNotificationsRead(token);
-    },
-    onSuccess: invalidateNotificationQueries,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      await deleteNotification(token, id);
-    },
-    onSuccess: invalidateNotificationQueries,
-  });
-
-  const prefMutation = useMutation({
-    mutationFn: async ({
-      category,
-      field,
-      value,
-    }: {
-      category: NotificationCategory;
-      field: 'inAppEnabled' | 'emailEnabled';
-      value: boolean;
-    }) => {
-      const token = await getToken();
-      if (!token) throw new Error('No token');
-      return updateNotificationPreference(token, category, {
-        [field]: value,
-      });
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.notifications.preferences(),
-      });
-    },
-  });
+  const prefsQuery = useNotificationPreferencesQuery();
+  const markReadMutation = useMarkNotificationReadMutation();
+  const markUnreadMutation = useMarkNotificationUnreadMutation();
+  const markAllMutation = useMarkAllNotificationsReadMutation();
+  const deleteMutation = useDeleteNotificationMutation();
+  const prefMutation = useUpdateNotificationPreferenceMutation();
 
   const loading = historyQuery.isPending;
   const prefsLoading = prefsQuery.isPending;
@@ -284,7 +189,9 @@ export default function NotificationsSettingsPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => void markReadMutation.mutateAsync(n.id)}
+                          onClick={() =>
+                            void markReadMutation.mutateAsync(n.id)
+                          }
                           disabled={markReadMutation.isPending}
                           aria-label="Mark read"
                         >
@@ -294,7 +201,9 @@ export default function NotificationsSettingsPage() {
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        onClick={() => void deleteMutation.mutateAsync(n.id)}
+                        onClick={() =>
+                          void deleteMutation.mutateAsync(n.id)
+                        }
                         disabled={deleteMutation.isPending}
                         aria-label="Delete notification"
                       >
@@ -341,7 +250,7 @@ export default function NotificationsSettingsPage() {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {preferences.map((pref) => (
+              {preferences.map((pref: NotificationPreference) => (
                 <div
                   key={pref.category}
                   className="flex items-center justify-between py-3"
@@ -351,8 +260,7 @@ export default function NotificationsSettingsPage() {
                   </span>
                   <div className="flex items-center gap-4">
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={pref.inAppEnabled}
                         onChange={() =>
                           void prefMutation.mutateAsync({
@@ -362,20 +270,22 @@ export default function NotificationsSettingsPage() {
                           })
                         }
                         disabled={prefMutation.isPending}
-                        className="size-4 rounded border-border accent-primary"
                       />
                       In-app
                     </label>
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={pref.emailEnabled}
-                        disabled
-                        className="size-4 rounded border-border accent-primary opacity-50"
+                        onChange={() =>
+                          void prefMutation.mutateAsync({
+                            category: pref.category,
+                            field: 'emailEnabled',
+                            value: !pref.emailEnabled,
+                          })
+                        }
+                        disabled={prefMutation.isPending}
                       />
-                      <span className="opacity-50">
-                        Email <span className="text-[10px]">(coming soon)</span>
-                      </span>
+                      Email
                     </label>
                   </div>
                 </div>

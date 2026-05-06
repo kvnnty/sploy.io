@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -13,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { apiFetchWithToken } from '@/lib/api';
+import { useBootstrapMutation } from '@/hooks/useAuth';
 
 function slugify(name: string): string {
   const s = name
@@ -25,13 +24,14 @@ function slugify(name: string): string {
 }
 
 export function TeamOnboarding({ email }: { email: string }) {
-  const { getToken } = useAuth();
   const router = useRouter();
   const [teamName, setTeamName] = useState('');
   const [teamSlug, setTeamSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const bootstrap = useBootstrapMutation();
+  const error = localError ?? bootstrap.error?.message ?? null;
 
   function onNameChange(name: string) {
     setTeamName(name);
@@ -40,30 +40,24 @@ export function TeamOnboarding({ email }: { email: string }) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setLocalError(null);
     const name = teamName.trim() || 'My team';
     const slug = (teamSlug.trim() || slugify(name)).toLowerCase();
     if (!/^[a-z0-9-]+$/.test(slug)) {
-      setError('Slug must be lowercase letters, numbers, and hyphens only.');
+      setLocalError(
+        'Slug must be lowercase letters, numbers, and hyphens only.',
+      );
       return;
     }
-    setLoading(true);
     try {
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-      await apiFetchWithToken('/auth/bootstrap', token, {
-        method: 'POST',
-        body: JSON.stringify({
-          displayName: email.split('@')[0],
-          teamName: name,
-          teamSlug: slug,
-        }),
+      await bootstrap.mutateAsync({
+        displayName: email.split('@')[0],
+        teamName: name,
+        teamSlug: slug,
       });
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create team');
-    } finally {
-      setLoading(false);
+    } catch {
+      /* surfaced via bootstrap.error */
     }
   }
 
@@ -112,8 +106,8 @@ export function TeamOnboarding({ email }: { email: string }) {
           </div>
         </CardContent>
         <CardFooter className="border-border">
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Creating…' : 'Continue'}
+          <Button type="submit" disabled={bootstrap.isPending} className="w-full">
+            {bootstrap.isPending ? 'Creating…' : 'Continue'}
           </Button>
         </CardFooter>
       </form>

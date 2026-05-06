@@ -1,12 +1,9 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { ChevronDown, Check, Plus } from 'lucide-react';
 
-import type { TeamMembership } from '@/lib/api';
-import { apiFetchWithToken } from '@/lib/api';
+import type { TeamMembership } from '@/types';
 import { ACTIVE_TEAM_COOKIE } from '@/lib/dashboard-constants';
 import { TeamAvatar } from '@/components/shared/team-avatar';
 import { CreateTeamDialog } from './create-team-dialog';
@@ -17,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useSwitchTeamMutation } from '@/hooks/useAuth';
 
 export function TeamSwitcher({
   teams,
@@ -25,29 +23,20 @@ export function TeamSwitcher({
   teams: TeamMembership[];
   activeTeamId: string | null;
 }) {
-  const { getToken } = useAuth();
   const router = useRouter();
-  const [switching, setSwitching] = useState(false);
+  const switchTeam = useSwitchTeamMutation();
 
   const active = teams.find((t) => t.team_id === activeTeamId) ?? teams[0];
 
   async function handleSwitch(teamId: string) {
     if (teamId === activeTeamId) return;
-    setSwitching(true);
     try {
-      const token = await getToken();
-      if (token) {
-        await apiFetchWithToken('/auth/switch-team', token, {
-          method: 'POST',
-          body: JSON.stringify({ teamId }),
-        });
-      }
+      await switchTeam.mutateAsync(teamId);
     } catch {
-      // best-effort
+      /* best-effort */
     }
     document.cookie = `${ACTIVE_TEAM_COOKIE}=${encodeURIComponent(teamId)}; path=/; max-age=31536000; SameSite=Lax`;
     router.refresh();
-    setSwitching(false);
   }
 
   if (!active) return null;
@@ -55,7 +44,7 @@ export function TeamSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        disabled={switching}
+        disabled={switchTeam.isPending}
         className="flex w-full items-center gap-2 rounded-lg border border-border bg-muted/40 px-2 py-1.5 text-left text-xs text-foreground outline-none transition hover:bg-muted focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50"
       >
         <TeamAvatar
@@ -73,7 +62,7 @@ export function TeamSwitcher({
         {teams.map((t) => (
           <DropdownMenuItem
             key={t.team_id}
-            onClick={() => handleSwitch(t.team_id)}
+            onClick={() => void handleSwitch(t.team_id)}
             className="flex items-center gap-2"
           >
             <TeamAvatar

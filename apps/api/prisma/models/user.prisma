@@ -18,5 +18,4 @@ model User {
   teamActivities           TeamActivity[]           @relation("TeamActivityActor")
 
   @@map("users")
-  @@schema("core")
 }

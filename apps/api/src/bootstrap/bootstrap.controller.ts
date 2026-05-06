@@ -7,7 +7,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { CurrentUser, type AuthUser } from '../auth';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { RateLimitGuard, RateLimit } from '../auth/guards/rate-limit.guard';
 import { AuditService } from '../audit';
 import { BootstrapService } from './bootstrap.service';
@@ -81,7 +82,7 @@ export class BootstrapController {
   async me(@CurrentUser() user: AuthUser) {
     return {
       authUserId: user.authUserId,
-      email: user.email,
+      email: user.email ?? '',
       internalUserId: user.internalUserId,
       activeTeamId: user.activeTeamId,
       role: user.role,

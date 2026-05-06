@@ -13,5 +13,4 @@ model SsoConnection {
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("sso_connections")
-  @@schema("core")
 }

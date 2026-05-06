@@ -30,7 +30,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
-import type { AuthMeResponse, TeamMembership } from '@/lib/api';
+import type { AuthMeResponse, TeamMembership } from '@/types';
 import { DASHBOARD_ROUTES } from '@/lib/dashboard-titles';
 
 import { TeamSwitcher } from './team-switcher';

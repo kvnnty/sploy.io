@@ -4,6 +4,7 @@ import { NotificationCategory } from '@prisma/client';
 import { PrismaService } from '../database';
 import { NotificationsService } from './notifications.service';
 import { NotificationRealtimeService } from './notification-realtime.service';
+import { NotificationEmailService } from './notification-email.service';
 import {
   NOTIFICATION_EVENTS,
   type NewSessionEvent,
@@ -22,6 +23,7 @@ export class NotificationListener {
     private readonly notifications: NotificationsService,
     private readonly realtime: NotificationRealtimeService,
     private readonly prisma: PrismaService,
+    private readonly emailService: NotificationEmailService,
   ) {}
 
   @OnEvent(NOTIFICATION_EVENTS.NEW_SESSION, { async: true })
@@ -44,6 +46,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(event.userId);
+        await this.emailService.sendIfEnabled({
+          userId: event.userId,
+          category: NotificationCategory.account_security,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle new session event: ${err}`);
@@ -71,6 +80,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(user.id);
+        await this.emailService.sendIfEnabled({
+          userId: user.id,
+          category: NotificationCategory.team_collaboration,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle team invite event: ${err}`);
@@ -92,6 +108,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(event.userId);
+        await this.emailService.sendIfEnabled({
+          userId: event.userId,
+          category: NotificationCategory.team_collaboration,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle invite accepted event: ${err}`);
@@ -117,6 +140,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(event.userId);
+        await this.emailService.sendIfEnabled({
+          userId: event.userId,
+          category: NotificationCategory.team_collaboration,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle invite declined event: ${err}`);
@@ -138,6 +168,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(event.targetUserId);
+        await this.emailService.sendIfEnabled({
+          userId: event.targetUserId,
+          category: NotificationCategory.team_collaboration,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle role changed event: ${err}`);
@@ -158,6 +195,13 @@ export class NotificationListener {
       });
       if (notification) {
         await this.pushToUser(event.targetUserId);
+        await this.emailService.sendIfEnabled({
+          userId: event.targetUserId,
+          category: NotificationCategory.team_collaboration,
+          title: notification.title,
+          body: notification.body,
+          actionUrl: notification.actionUrl,
+        });
       }
     } catch (err) {
       this.logger.error(`Failed to handle member removed event: ${err}`);
