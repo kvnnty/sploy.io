@@ -1,0 +1,2 @@
+-- This migration was generated from an intermediate schema state and is intentionally
+-- kept as a no-op to preserve migration ordering in local environments.

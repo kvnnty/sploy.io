@@ -4,7 +4,6 @@ enum InvitationStatus {
   declined
   expired
 
-  @@schema("core")
 }
 
 model Invitation {
@@ -23,5 +22,4 @@ model Invitation {
 
   @@unique([teamId, email], map: "uq_invitation_team_email")
   @@map("invitations")
-  @@schema("core")
 }

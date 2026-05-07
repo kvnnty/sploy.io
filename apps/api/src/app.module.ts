@@ -11,7 +11,7 @@ import { DataSourcesModule } from './data-sources/data-sources.module';
 import { UserModule } from './user';
 import { SessionsModule } from './sessions';
 import { ProvidersModule } from './providers';
-import { TeamManagementModule } from './team-management';
+import { TeamsModule } from './teams';
 import { NotificationsModule } from './notifications';
 import { StorageModule } from './storage';
 import { validate } from './config/env.validation';
@@ -32,7 +32,7 @@ import { validate } from './config/env.validation';
     UserModule,
     SessionsModule,
     ProvidersModule,
-    TeamManagementModule,
+    TeamsModule,
     NotificationsModule,
     StorageModule,
   ],

@@ -13,5 +13,4 @@ model UserSession {
   @@index([userId], map: "idx_user_sessions_user_id")
   @@index([userId, lastActiveAt], map: "idx_user_sessions_user_last_active")
   @@map("user_sessions")
-  @@schema("core")
 }

@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import Logo from '@/components/shared/logo';
 import { HelpDropdown } from './help-dropdown';
 import { NotificationBell } from './notification-bell';
 import { ProfileDropdown } from './profile-dropdown';
 import { TeamSwitcher } from '../dashboard/team-switcher';
-import type { TeamMembership } from '@/lib/api';
+import type { TeamMembership } from '@/types';
 
 export function Navbar({
   name,

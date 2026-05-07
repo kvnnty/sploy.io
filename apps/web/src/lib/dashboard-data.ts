@@ -3,11 +3,8 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { auth, currentUser } from '@clerk/nextjs/server';
 
-import {
-  apiFetchServer,
-  type AuthMeResponse,
-  type TeamMembership,
-} from '@/lib/api';
+import { apiFetchServer } from '@/lib/api-server';
+import type { AuthMeResponse, TeamMembership } from '@/types';
 import { ACTIVE_TEAM_COOKIE } from '@/lib/dashboard-constants';
 
 function pickTeamId(

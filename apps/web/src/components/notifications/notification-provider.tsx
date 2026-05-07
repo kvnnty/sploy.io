@@ -8,14 +8,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  createNotificationStream,
-  fetchUnreadCount,
-  type NotificationItem,
-} from '@/lib/notifications';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { useApiClient } from '@/components/providers/api-client-provider';
+import { createNotificationStream } from '@/lib/notifications-stream';
+import type { NotificationItem } from '@/types/notification.types';
 import { queryKeys } from '@/lib/query-keys';
+import { useNotificationUnreadCountQuery } from '@/hooks/useNotifications';
 
 interface NotificationContextValue {
   unreadCount: number;
@@ -38,20 +37,13 @@ export function NotificationProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { getToken } = useAuth();
+  const { getToken } = useApiClient();
   const queryClient = useQueryClient();
   const [latestNotification, setLatestNotification] =
     useState<NotificationItem | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const { data: unreadData } = useQuery({
-    queryKey: queryKeys.notifications.unreadCount(),
-    queryFn: async () => {
-      const token = await getToken();
-      if (!token) return { count: 0 };
-      return fetchUnreadCount(token);
-    },
-  });
+  const { data: unreadData } = useNotificationUnreadCountQuery();
 
   const refreshCount = useCallback(async () => {
     await queryClient.invalidateQueries({

@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { TeamRole } from '@prisma/client';
-import type { AuthUser } from '../auth';
+import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import { PrismaService } from '../database';
 
 export interface BootstrapResult {
@@ -51,6 +51,10 @@ export class BootstrapService {
     authUser: AuthUser,
     opts: { displayName?: string; teamName?: string; teamSlug?: string },
   ): Promise<BootstrapResult> {
+    if (!authUser.email) {
+      throw new ForbiddenException('Email claim is required for bootstrap');
+    }
+
     let isNewUser = false;
     let isNewTeam = false;
 

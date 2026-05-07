@@ -1,0 +1,3 @@
+-- This migration is intentionally a no-op.
+-- It was generated from an intermediate schema transition and retained only
+-- to preserve local migration history ordering.

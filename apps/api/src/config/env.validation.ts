@@ -58,6 +58,22 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   MINIO_PUBLIC_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEND_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEND_FROM_EMAIL?: string;
+
+  @IsOptional()
+  @IsUrl()
+  APP_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  APP_NAME?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

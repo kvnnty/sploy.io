@@ -3,6 +3,4 @@ enum TeamRole {
   admin
   member
   viewer
-
-  @@schema("core")
 }

@@ -1,18 +1,15 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
-import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { SessionsList } from '@/components/settings/sessions-list';
-import { apiFetchWithToken } from '@/lib/api';
-
-type ProviderStatus = {
-  provider: string;
-  connected: boolean;
-  email: string | null;
-};
+import type { ProviderStatus } from '@/types';
+import {
+  useConnectProviderMutation,
+  useConnectedAccountsQuery,
+  useDisconnectProviderMutation,
+} from '@/hooks/useAuth';
 
 const providerMeta: Record<string, { label: string; icon: string }> = {
   google: { label: 'Google', icon: 'G' },
@@ -20,47 +17,14 @@ const providerMeta: Record<string, { label: string; icon: string }> = {
   microsoft: { label: 'Microsoft', icon: 'MS' },
 };
 
-function ProviderCard({
-  provider,
-  onRefresh,
-}: {
-  provider: ProviderStatus;
-  onRefresh: () => void;
-}) {
-  const { getToken } = useAuth();
-  const [loading, setLoading] = useState(false);
+function ProviderCard({ provider }: { provider: ProviderStatus }) {
+  const connect = useConnectProviderMutation();
+  const disconnect = useDisconnectProviderMutation();
+  const loading = connect.isPending || disconnect.isPending;
   const meta = providerMeta[provider.provider] ?? {
     label: provider.provider,
     icon: provider.provider[0]?.toUpperCase() ?? '?',
   };
-
-  async function handleConnect() {
-    setLoading(true);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken(`/auth/connect/${provider.provider}`, token, {
-        method: 'POST',
-      });
-      onRefresh();
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDisconnect() {
-    setLoading(true);
-    try {
-      const token = await getToken();
-      if (!token) return;
-      await apiFetchWithToken(`/auth/disconnect/${provider.provider}`, token, {
-        method: 'DELETE',
-      });
-      onRefresh();
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
@@ -82,14 +46,18 @@ function ProviderCard({
             <Button
               variant="outline"
               size="xs"
-              onClick={handleDisconnect}
+              onClick={() => void disconnect.mutateAsync(provider.provider)}
               disabled={loading}
             >
               Disconnect
             </Button>
           </>
         ) : (
-          <Button size="sm" onClick={handleConnect} disabled={loading}>
+          <Button
+            size="sm"
+            onClick={() => void connect.mutateAsync(provider.provider)}
+            disabled={loading}
+          >
             Connect
           </Button>
         )}
@@ -99,30 +67,11 @@ function ProviderCard({
 }
 
 export default function SecuritySettingsPage() {
-  const { getToken } = useAuth();
-  const [providers, setProviders] = useState<ProviderStatus[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadProviders = useCallback(async () => {
-    const token = await getToken();
-    if (!token) return;
-    try {
-      const data = await apiFetchWithToken<ProviderStatus[]>(
-        '/auth/providers',
-        token,
-      );
-      setProviders(data);
-      setLoaded(true);
-    } catch {
-      setError('Could not load connected accounts.');
-      setLoaded(true);
-    }
-  }, [getToken]);
-
-  useEffect(() => {
-    loadProviders();
-  }, [loadProviders]);
+  const providersQuery = useConnectedAccountsQuery();
+  const loaded = !providersQuery.isPending;
+  const error =
+    providersQuery.isError ? 'Could not load connected accounts.' : null;
+  const providers = providersQuery.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -147,11 +96,7 @@ export default function SecuritySettingsPage() {
           ) : (
             <div className="space-y-3">
               {providers.map((p) => (
-                <ProviderCard
-                  key={p.provider}
-                  provider={p}
-                  onRefresh={loadProviders}
-                />
+                <ProviderCard key={p.provider} provider={p} />
               ))}
             </div>
           )}

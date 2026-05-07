@@ -12,8 +12,8 @@ import { PrismaService } from '../database';
 import { NOTIFICATION_EVENTS } from '../notifications/events';
 
 @Injectable()
-export class TeamManagementService {
-  private readonly logger = new Logger(TeamManagementService.name);
+export class TeamsService {
+  private readonly logger = new Logger(TeamsService.name);
 
   constructor(
     private readonly prisma: PrismaService,

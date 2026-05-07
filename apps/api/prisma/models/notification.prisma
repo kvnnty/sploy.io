@@ -3,7 +3,6 @@ enum NotificationCategory {
   team_collaboration
   system_product
 
-  @@schema("core")
 }
 
 model Notification {
@@ -25,5 +24,4 @@ model Notification {
   @@index([userId, createdAt(sort: Desc)], map: "idx_notifications_user_created")
   @@index([userId, readAt], map: "idx_notifications_user_read")
   @@map("notifications")
-  @@schema("core")
 }

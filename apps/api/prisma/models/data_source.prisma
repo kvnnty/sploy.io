@@ -1,7 +1,5 @@
 enum DataSourceKind {
   postgresql
-
-  @@schema("core")
 }
 
 model DataSource {
@@ -21,5 +19,4 @@ model DataSource {
 
   @@index([teamId])
   @@map("data_sources")
-  @@schema("core")
 }
