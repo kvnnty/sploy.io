@@ -1,8 +1,11 @@
 export { API_URL } from '@/lib/api-config';
 export { apiFetchServer } from '@/lib/api-server';
 export type {
+  AskAnalysisBrief,
+  AskDataSourceResponse,
   AuthMeResponse,
   BootstrapPayload,
+  CreateDataSourceBody,
   CreateTeamBody,
   DataSourceSummary,
   IncomingTeamInvite,

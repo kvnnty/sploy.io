@@ -52,24 +52,23 @@ export function ProfileDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex items-center gap-2 rounded-full bg-card outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Open account menu"
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt=""
-            className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border"
+            className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border"
           />
         ) : (
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
             {initials}
           </span>
         )}
-        <span className="hidden text-sm text-foreground md:block">{name || email}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={6} className="w-72 min-w-72 p-2">
-        <div className="mb-2 rounded-lg border border-border bg-muted/40 p-3">
+        <div className="mb-2">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
               <img

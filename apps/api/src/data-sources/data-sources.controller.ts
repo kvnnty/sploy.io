@@ -17,6 +17,7 @@ import {
   CreateDataSourceDto,
   RunQueryDto,
 } from './dto/data-sources.dto';
+import { AnalysisBriefService } from '../query/analysis-brief.service';
 import { NlSqlService } from '../query/nl-sql.service';
 
 @Controller('teams/:teamId/data-sources')
@@ -25,6 +26,7 @@ export class DataSourcesController {
   constructor(
     private readonly dataSources: DataSourcesService,
     private readonly nlSql: NlSqlService,
+    private readonly analysisBrief: AnalysisBriefService,
   ) {}
 
   @Post()
@@ -77,6 +79,12 @@ export class DataSourcesController {
       dto.sql?.trim() ||
       (await this.nlSql.questionToSelectSql(dto.question, dto.schemaHint));
     const result = await this.dataSources.runQuery(teamId, dataSourceId, sql);
-    return { sql, ...result };
+    const brief = await this.analysisBrief.summarize({
+      question: dto.question,
+      sql,
+      rows: result.rows,
+      truncated: result.truncated,
+    });
+    return { sql, ...result, brief: brief ?? undefined };
   }
 }

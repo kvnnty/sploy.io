@@ -27,4 +27,9 @@ export const queryKeys = {
       [...queryKeys.notifications.root, 'history', filter] as const,
     preferences: () => [...queryKeys.notifications.root, 'preferences'] as const,
   },
+  dataSources: {
+    root: ['data-sources'] as const,
+    list: (teamId: string) =>
+      [...queryKeys.dataSources.root, 'list', teamId] as const,
+  },
 } as const;

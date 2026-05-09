@@ -8,6 +8,7 @@ import { NotificationService } from '@/services/notification.service';
 import { SessionService } from '@/services/session.service';
 import { TeamService } from '@/services/team.service';
 import { UploadService } from '@/services/upload.service';
+import { DataSourcesService } from '@/services/data-sources.service';
 import { UserService } from '@/services/user.service';
 
 export function useAuthService(): AuthService {
@@ -33,6 +34,11 @@ export function useSessionService(): SessionService {
 export function useUploadService(): UploadService {
   const { axios } = useApiClient();
   return useMemo(() => new UploadService(axios), [axios]);
+}
+
+export function useDataSourcesService(): DataSourcesService {
+  const { axios } = useApiClient();
+  return useMemo(() => new DataSourcesService(axios), [axios]);
 }
 
 export function useNotificationService(): NotificationService {
