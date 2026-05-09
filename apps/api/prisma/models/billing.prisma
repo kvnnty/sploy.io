@@ -1,0 +1,80 @@
+enum BillingPlan {
+  free
+  starter
+  growth
+  pro
+  enterprise
+}
+
+enum BillingStatus {
+  none
+  incomplete
+  trialing
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+enum UsageEventType {
+  ai_query
+  connector_usage
+  agent_run
+  action_execution
+}
+
+enum UsageSyncStatus {
+  pending
+  synced
+  failed
+}
+
+model UsageEvent {
+  id         String           @id @default(uuid()) @db.Uuid
+  teamId     String           @map("team_id") @db.Uuid
+  type       UsageEventType
+  metadata   Json             @default("{}")
+  syncStatus UsageSyncStatus  @default(pending) @map("sync_status")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, createdAt], map: "usage_events_team_created")
+  @@map("usage_events")
+}
+
+/// Aggregated usage for the active billing period (or calendar month when not subscribed).
+model UsageSummary {
+  id        String   @id @default(uuid()) @db.Uuid
+  teamId    String   @map("team_id") @db.Uuid
+  periodStart DateTime @map("period_start") @db.Timestamptz(6)
+  periodEnd   DateTime @map("period_end") @db.Timestamptz(6)
+
+  aiQueryCount        Int @default(0) @map("ai_query_count")
+  agentRunCount       Int @default(0) @map("agent_run_count")
+  actionExecutionCount Int @default(0) @map("action_execution_count")
+  connectorUsageCount Int @default(0) @map("connector_usage_count")
+
+  /// Amount already successfully reported to Stripe for this period (per metric).
+  lastSyncedAiQuery          Int @default(0) @map("last_synced_ai_query")
+  lastSyncedAgentRun         Int @default(0) @map("last_synced_agent_run")
+  lastSyncedActionExecution  Int @default(0) @map("last_synced_action_execution")
+  lastSyncedConnectorUsage   Int @default(0) @map("last_synced_connector_usage")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, periodStart], map: "uq_usage_summary_team_period")
+  @@map("usage_summaries")
+}
+
+/// Idempotent Stripe webhook processing (event ids are unique).
+model StripeWebhookEvent {
+  id          String   @id
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt DateTime? @map("processed_at")
+
+  @@map("stripe_webhook_events")
+}

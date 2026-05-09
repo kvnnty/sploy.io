@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { DataSource } from '@prisma/client';
 import { PrismaService } from '../database';
+import { EntitlementsService } from '../billing/entitlements/entitlements.service';
 import { CredentialCryptoService } from './credential-crypto.service';
 import { QueryExecutionService } from '../query/query-execution.service';
 import type { CreateDataSourceDto } from './dto/data-sources.dto';
@@ -17,12 +18,14 @@ export class DataSourcesService {
     private readonly prisma: PrismaService,
     private readonly crypto: CredentialCryptoService,
     private readonly queryExecution: QueryExecutionService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   async create(
     teamId: string,
     dto: CreateDataSourceDto,
   ): Promise<DataSourcePublic> {
+    await this.entitlements.assertCanAddConnector(teamId);
     const encryptedCredential = this.crypto.encrypt(dto.password);
     const row = await this.prisma.dataSource.create({
       data: {

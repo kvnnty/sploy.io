@@ -10,6 +10,7 @@ import { TeamService } from '@/services/team.service';
 import { UploadService } from '@/services/upload.service';
 import { DataSourcesService } from '@/services/data-sources.service';
 import { UserService } from '@/services/user.service';
+import { BillingService } from '@/services/billing.service';
 
 export function useAuthService(): AuthService {
   const { axios } = useApiClient();
@@ -44,4 +45,9 @@ export function useDataSourcesService(): DataSourcesService {
 export function useNotificationService(): NotificationService {
   const { axios } = useApiClient();
   return useMemo(() => new NotificationService(axios), [axios]);
+}
+
+export function useBillingService(): BillingService {
+  const { axios } = useApiClient();
+  return useMemo(() => new BillingService(axios), [axios]);
 }

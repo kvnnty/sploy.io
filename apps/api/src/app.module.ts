@@ -14,6 +14,7 @@ import { ProvidersModule } from './providers';
 import { TeamsModule } from './teams';
 import { NotificationsModule } from './notifications';
 import { StorageModule } from './storage';
+import { BillingModule } from './billing/billing.module';
 import { validate } from './config/env.validation';
 
 @Module({
@@ -35,6 +36,7 @@ import { validate } from './config/env.validation';
     TeamsModule,
     NotificationsModule,
     StorageModule,
+    BillingModule,
   ],
   controllers: [AppController],
 })

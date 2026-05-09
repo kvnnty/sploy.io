@@ -19,7 +19,7 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden
       >   
-        <div className="absolute inset-0 opacity-[0.12] [background-image:radial-gradient(rgba(0,0,0,0.22)_1px,transparent_1px)] [background-size:20px_20px] dark:opacity-[0.1] dark:[background-image:radial-gradient(rgba(255,255,255,0.7)_0.7px,transparent_1px)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.22)_1px,transparent_1px)] bg-size-[20px_20px] opacity-[0.12] dark:bg-[radial-gradient(rgba(255,255,255,0.7)_0.7px,transparent_1px)] dark:opacity-[0.1]" />
       </div>
 
       <div className="flex w-full max-w-2xl flex-1 self-center flex-col items-center justify-center gap-6">
@@ -62,6 +62,12 @@ export function LandingPage({ waitlistPeople }: { waitlistPeople: number }) {
         <div className="flex flex-col items-center justify-between gap-4 text-xs text-muted-foreground sm:flex-row">
           <p className="tracking-[0.02em]">© {year} Sploy. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
+            <Link
+              href="/pricing"
+              className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
+            >
+              Pricing
+            </Link>
             <Link
               href="#"
               className="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:text-foreground"
