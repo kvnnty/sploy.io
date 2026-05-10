@@ -74,6 +74,43 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   APP_NAME?: string;
+
+  /** Stripe — optional locally; billing endpoints return 503 if secret missing */
+  @IsOptional()
+  @IsString()
+  STRIPE_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_WEBHOOK_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_STARTER_MONTHLY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_GROWTH_MONTHLY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_PRO_MONTHLY?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_AI_QUERY_METERED?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_AGENT_RUN_METERED?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_PRICE_ACTION_EXECUTION_METERED?: string;
+
+  @IsOptional()
+  @IsString()
+  STRIPE_BILLING_PORTAL_RETURN_URL?: string;
 }
 
 export function validate(config: Record<string, unknown>) {

@@ -18,7 +18,8 @@ export type DashboardRouteId =
   | 'settingsAccount'
   | 'settingsSecurity'
   | 'settingsTeam'
-  | 'settingsNotifications';
+  | 'settingsNotifications'
+  | 'settingsBilling';
 
 export type DashboardRouteConfig = {
   /** Main heading (<h1>) */
@@ -54,9 +55,10 @@ export const DASHBOARD_ROUTES: Record<DashboardRouteId, DashboardRouteConfig> = 
     description: 'Store templates, saved analyses, and reusable prompt blocks.',
   },
   dataConnectors: {
-    pageTitle: 'Data connectors',
-    documentTitle: 'Data connectors',
-    description: 'Manage source credentials, sync health, and schema refresh across environments.',
+    pageTitle: 'Connectors',
+    documentTitle: 'Connectors',
+    description:
+      'Connectors let Sploy agents ingest, analyze, monitor, and automate business intelligence workflows across your stack.',
   },
   customAgents: {
     pageTitle: 'Custom agents',
@@ -97,5 +99,9 @@ export const DASHBOARD_ROUTES: Record<DashboardRouteId, DashboardRouteConfig> = 
   settingsNotifications: {
     pageTitle: 'Notifications',
     documentTitle: 'Notifications · Settings',
+  },
+  settingsBilling: {
+    pageTitle: 'Billing',
+    documentTitle: 'Billing · Settings',
   },
 };

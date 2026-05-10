@@ -7,6 +7,7 @@ import {
   Cable,
   CheckCircle2,
   CircleDashed,
+  CreditCard,
   FlaskConical,
   Library,
   MenuIcon,
@@ -34,6 +35,7 @@ import type { AuthMeResponse, TeamMembership } from '@/types';
 import { DASHBOARD_ROUTES } from '@/lib/dashboard-titles';
 
 import { TeamSwitcher } from './team-switcher';
+import { ActiveTeamProvider } from './active-team-provider';
 
 const nav = [
   { href: '/dashboard', label: DASHBOARD_ROUTES.new.pageTitle, icon: PlusSquare },
@@ -46,6 +48,7 @@ const nav = [
 
 const settingsNav = [
   { href: '/dashboard/settings/account', label: 'Account settings', icon: User },
+  { href: '/dashboard/settings/billing', label: 'Billing', icon: CreditCard },
 ] as const;
 
 function NavLinks({
@@ -235,7 +238,9 @@ export function DashboardLayout({
             </div>
           ) : null}
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <ActiveTeamProvider teamId={activeTeamId}>{children}</ActiveTeamProvider>
+          </main>
         </div>
       </div>
     </NotificationProvider>

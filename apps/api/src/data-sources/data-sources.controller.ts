@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TeamRole } from '@prisma/client';
+import { UsageEventType } from '@prisma/client';
 import { TeamMemberGuard } from '../auth/guards/team-member.guard';
 import { Roles } from '../auth';
 import { DataSourcesService } from './data-sources.service';
@@ -17,7 +18,10 @@ import {
   CreateDataSourceDto,
   RunQueryDto,
 } from './dto/data-sources.dto';
+import { AnalysisBriefService } from '../query/analysis-brief.service';
 import { NlSqlService } from '../query/nl-sql.service';
+import { EntitlementsService } from '../billing/entitlements/entitlements.service';
+import { UsageService } from '../billing/usage/usage.service';
 
 @Controller('teams/:teamId/data-sources')
 @UseGuards(TeamMemberGuard)
@@ -25,6 +29,9 @@ export class DataSourcesController {
   constructor(
     private readonly dataSources: DataSourcesService,
     private readonly nlSql: NlSqlService,
+    private readonly analysisBrief: AnalysisBriefService,
+    private readonly entitlements: EntitlementsService,
+    private readonly usage: UsageService,
   ) {}
 
   @Post()
@@ -73,10 +80,20 @@ export class DataSourcesController {
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() dto: AskDto,
   ) {
+    await this.entitlements.assertCanRunAiQuery(teamId);
     const sql =
       dto.sql?.trim() ||
       (await this.nlSql.questionToSelectSql(dto.question, dto.schemaHint));
     const result = await this.dataSources.runQuery(teamId, dataSourceId, sql);
-    return { sql, ...result };
+    const brief = await this.analysisBrief.summarize({
+      question: dto.question,
+      sql,
+      rows: result.rows,
+      truncated: result.truncated,
+    });
+    await this.usage.record(teamId, UsageEventType.ai_query, {
+      dataSourceId,
+    });
+    return { sql, ...result, brief: brief ?? undefined };
   }
 }
