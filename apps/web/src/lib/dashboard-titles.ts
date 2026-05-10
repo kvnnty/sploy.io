@@ -18,7 +18,8 @@ export type DashboardRouteId =
   | 'settingsAccount'
   | 'settingsSecurity'
   | 'settingsTeam'
-  | 'settingsNotifications';
+  | 'settingsNotifications'
+  | 'settingsBilling';
 
 export type DashboardRouteConfig = {
   /** Main heading (<h1>) */
@@ -98,5 +99,9 @@ export const DASHBOARD_ROUTES: Record<DashboardRouteId, DashboardRouteConfig> = 
   settingsNotifications: {
     pageTitle: 'Notifications',
     documentTitle: 'Notifications · Settings',
+  },
+  settingsBilling: {
+    pageTitle: 'Billing',
+    documentTitle: 'Billing · Settings',
   },
 };

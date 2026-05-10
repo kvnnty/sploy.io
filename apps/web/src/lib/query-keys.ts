@@ -32,4 +32,11 @@ export const queryKeys = {
     list: (teamId: string) =>
       [...queryKeys.dataSources.root, 'list', teamId] as const,
   },
+  billing: {
+    root: ['billing'] as const,
+    status: (teamId: string) =>
+      [...queryKeys.billing.root, 'status', teamId] as const,
+    invoices: (teamId: string) =>
+      [...queryKeys.billing.root, 'invoices', teamId] as const,
+  },
 } as const;

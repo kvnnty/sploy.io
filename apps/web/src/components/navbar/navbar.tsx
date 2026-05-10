@@ -42,7 +42,11 @@ export function Navbar({
           )}
           <NotificationBell />
           <HelpDropdown />
-          <ProfileDropdown name={name} email={email} />
+          <ProfileDropdown
+            name={name}
+            email={email}
+            activeTeamId={activeTeamId ?? null}
+          />
         </div>
       </div>
     </header>

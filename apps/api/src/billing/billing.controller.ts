@@ -36,4 +36,10 @@ export class BillingController {
   getStatus(@Param('teamId', ParseUUIDPipe) teamId: string) {
     return this.billing.getStatus(teamId);
   }
+
+  @Get('invoices/:teamId')
+  @UseGuards(TeamMemberGuard)
+  listInvoices(@Param('teamId', ParseUUIDPipe) teamId: string) {
+    return this.billing.listInvoices(teamId);
+  }
 }

@@ -14,6 +14,23 @@ export type BillingStatus =
   | 'canceled'
   | 'unpaid';
 
+export type BillingInvoiceSummary = {
+  id: string;
+  number: string | null;
+  status: string;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  /** Unix timestamp (seconds) from Stripe */
+  created: number;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+};
+
+export type BillingInvoicesResponse = {
+  invoices: BillingInvoiceSummary[];
+};
+
 export type BillingStatusResponse = {
   teamId: string;
   plan: BillingPlan;
@@ -22,6 +39,8 @@ export type BillingStatusResponse = {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   billingPeriod: { start: string | null; end: string | null };
+  /** Live connector count vs limits.maxConnectors */
+  connectorCount: number;
   limits: {
     maxConnectors: number;
     maxAiQueriesPerPeriod: number;

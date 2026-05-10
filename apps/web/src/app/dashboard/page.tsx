@@ -31,7 +31,7 @@ export default function DashboardPage() {
         </h1>
         <p className="mt-2 max-w-2xl text-center text-sm text-muted-foreground">{t.description}</p>
 
-        <div className="mt-7 w-full max-w-3xl rounded-2xl border border-border bg-card p-4 shadow-2xl">
+        <div className="mt-7 w-full max-w-3xl rounded-2xl border border-border bg-card p-4">
           <textarea
             placeholder="Analyze and visualize patterns in my data..."
             className="h-24 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"

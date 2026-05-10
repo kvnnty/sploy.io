@@ -1,9 +1,10 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
+import { CreditCard, LogOut, Settings, ShieldCheck, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   DropdownMenu,
@@ -14,6 +15,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useBillingService } from '@/hooks/service-instances';
+import { billingProfileActionLabel } from '@/lib/billing-display';
+import { queryKeys } from '@/lib/query-keys';
+import { cn } from '@/lib/utils';
 
 function initialsFor(name: string, email: string): string {
   const base = name.trim() || email.trim();
@@ -26,15 +31,35 @@ function initialsFor(name: string, email: string): string {
 export function ProfileDropdown({
   name,
   email,
+  activeTeamId,
 }: {
   name: string;
   email: string;
+  activeTeamId: string | null;
 }) {
   const { user } = useUser();
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
+  const billingApi = useBillingService();
   const initials = useMemo(() => initialsFor(name, email), [name, email]);
   const avatarUrl = user?.imageUrl ?? null;
+
+  const billingStatusQuery = useQuery({
+    queryKey: activeTeamId ? queryKeys.billing.status(activeTeamId) : ['billing', 'status', 'skipped'],
+    queryFn: () => billingApi.status(activeTeamId!),
+    enabled: Boolean(activeTeamId),
+    staleTime: 60_000,
+  });
+
+  const billingPrimaryLabel =
+    activeTeamId && billingStatusQuery.data
+      ? billingProfileActionLabel(
+          billingStatusQuery.data.plan,
+          billingStatusQuery.data.status,
+        )
+      : activeTeamId && billingStatusQuery.isPending
+        ? ('Billing…' as const)
+        : ('Upgrade Plan' as const);
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -87,6 +112,20 @@ export function ProfileDropdown({
             </div>
           </div>
         </div>
+
+        <DropdownMenuSeparator className="my-2" />
+
+        <DropdownMenuItem
+          className={cn(
+            'gap-2 px-2 py-2.5 font-medium text-foreground',
+            billingPrimaryLabel === 'Billing…' && 'opacity-80',
+          )}
+          disabled={billingPrimaryLabel === 'Billing…'}
+          onClick={() => router.push('/dashboard/settings/billing')}
+        >
+          <CreditCard className="size-4 shrink-0" aria-hidden />
+          {billingPrimaryLabel}
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator className="my-2" />
 

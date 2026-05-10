@@ -1,6 +1,7 @@
 import type { AxiosInstance } from 'axios';
 
 import type {
+  BillingInvoicesResponse,
   BillingStatusResponse,
   CheckoutSessionResponse,
   PortalSessionResponse,
@@ -27,6 +28,12 @@ export class BillingService {
   status(teamId: string): Promise<BillingStatusResponse> {
     return this.http
       .get<BillingStatusResponse>(`/billing/status/${teamId}`)
+      .then((r) => r.data);
+  }
+
+  invoices(teamId: string): Promise<BillingInvoicesResponse> {
+    return this.http
+      .get<BillingInvoicesResponse>(`/billing/invoices/${teamId}`)
       .then((r) => r.data);
   }
 }

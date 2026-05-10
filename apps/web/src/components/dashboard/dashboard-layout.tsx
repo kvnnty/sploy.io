@@ -7,6 +7,7 @@ import {
   Cable,
   CheckCircle2,
   CircleDashed,
+  CreditCard,
   FlaskConical,
   Library,
   MenuIcon,
@@ -47,6 +48,7 @@ const nav = [
 
 const settingsNav = [
   { href: '/dashboard/settings/account', label: 'Account settings', icon: User },
+  { href: '/dashboard/settings/billing', label: 'Billing', icon: CreditCard },
 ] as const;
 
 function NavLinks({

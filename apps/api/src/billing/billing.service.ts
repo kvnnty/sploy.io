@@ -143,12 +143,12 @@ export class BillingService {
     });
     if (!team) throw new NotFoundException('Team not found');
 
-    const limits = PLAN_LIMITS[team.billingPlan];
-    const usage = await this.usage.getSummaryForTeam(teamId);
-    const warnings = await this.entitlements.getUsageWarnings(
-      teamId,
-      team.billingPlan,
-    );
+    const [limits, usage, warnings, connectorCount] = await Promise.all([
+      Promise.resolve(PLAN_LIMITS[team.billingPlan]),
+      this.usage.getSummaryForTeam(teamId),
+      this.entitlements.getUsageWarnings(teamId, team.billingPlan),
+      this.prisma.dataSource.count({ where: { teamId } }),
+    ]);
 
     return {
       teamId: team.id,
@@ -162,6 +162,7 @@ export class BillingService {
         end: team.billingPeriodEnd,
       },
       limits,
+      connectorCount,
       usage: {
         periodStart: usage.periodStart,
         periodEnd: usage.periodEnd,
@@ -173,4 +174,50 @@ export class BillingService {
       warnings,
     };
   }
+
+  async listInvoices(teamId: string) {
+    const team = await this.prisma.team.findUnique({
+      where: { id: teamId },
+    });
+    if (!team) throw new NotFoundException('Team not found');
+    if (!team.stripeCustomerId) {
+      return { invoices: [] as BillingInvoiceSummary[] };
+    }
+
+    try {
+      const stripe = this.stripeService.getStripe();
+      const res = await stripe.invoices.list({
+        customer: team.stripeCustomerId,
+        limit: 24,
+      });
+      const invoices: BillingInvoiceSummary[] = res.data
+        .filter((inv): inv is typeof inv & { id: string } => Boolean(inv.id))
+        .map((inv) => ({
+          id: inv.id,
+          number: inv.number,
+          status: inv.status ?? 'unknown',
+          amountDue: inv.amount_due ?? 0,
+          amountPaid: inv.amount_paid ?? 0,
+          currency: inv.currency,
+          created: inv.created,
+          hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+          invoicePdf: inv.invoice_pdf ?? null,
+        }));
+      return { invoices };
+    } catch {
+      return { invoices: [] as BillingInvoiceSummary[] };
+    }
+  }
 }
+
+export type BillingInvoiceSummary = {
+  id: string;
+  number: string | null;
+  status: string;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  created: number;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+};
