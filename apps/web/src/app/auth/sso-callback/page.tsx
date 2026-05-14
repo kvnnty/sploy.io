@@ -4,6 +4,10 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useClerk, useSignIn, useSignUp } from '@clerk/nextjs';
 
+/**
+ * OAuth / SSO redirect completion - follows Clerk custom OAuth callback flow:
+ * https://clerk.com/docs/guides/development/custom-flows/authentication/oauth-connections
+ */
 export default function SSOCallbackPage() {
   const clerk = useClerk();
   const { signIn } = useSignIn();
@@ -12,44 +16,77 @@ export default function SSOCallbackPage() {
   const hasRun = useRef(false);
 
   useEffect(() => {
+    const navigateToSignIn = () => {
+      router.replace('/auth/login');
+    };
+
+    const navigateToDashboard = async ({
+      session,
+      decorateUrl,
+    }: {
+      session?: { currentTask?: unknown } | null;
+      decorateUrl: (path: string) => string;
+    }) => {
+      if (session?.currentTask) return;
+      const url = decorateUrl('/dashboard');
+      window.location.assign(url);
+    };
+
+    const finalizeSignIn = async () => {
+      await signIn.finalize({ navigate: navigateToDashboard });
+    };
+
+    const finalizeSignUp = async () => {
+      await signUp.finalize({ navigate: navigateToDashboard });
+    };
+
     const run = async () => {
-      if (!clerk.loaded || hasRun.current) return;
+      if (!clerk.loaded) return;
+      if (!signIn || !signUp) return;
+      if (hasRun.current) return;
       hasRun.current = true;
 
-      const navigateToDashboard = async ({ decorateUrl }: { decorateUrl: (path: string) => string }) => {
-        const url = decorateUrl('/dashboard');
-        if (url.startsWith('http')) {
-          window.location.href = url;
-        } else {
-          router.replace(url);
-        }
-      };
-
-      const navigateToSignIn = () => {
-        router.replace('/auth/login');
-      };
-
       if (signIn.status === 'complete') {
-        await signIn.finalize({ navigate: navigateToDashboard });
+        await finalizeSignIn();
         return;
       }
 
       if (signUp.isTransferable) {
         await signIn.create({ transfer: true });
+        const signInStatus = signIn.status as typeof signIn.status | 'complete';
+        if (signInStatus === 'complete') {
+          await finalizeSignIn();
+          return;
+        }
+        navigateToSignIn();
+        return;
+      }
+
+      if (
+        signIn.status === 'needs_first_factor' &&
+        !signIn.supportedFirstFactors?.every((f) => f.strategy === 'enterprise_sso')
+      ) {
+        navigateToSignIn();
+        return;
       }
 
       if (signIn.isTransferable) {
         await signUp.create({ transfer: true });
-      }
-
-      if (signUp.status === 'complete') {
-        await signUp.finalize({ navigate: navigateToDashboard });
+        if (signUp.status === 'complete') {
+          await finalizeSignUp();
+          return;
+        }
+        router.replace('/auth/sign-up');
         return;
       }
 
-      const signInStatus = signIn.status as typeof signIn.status | 'complete';
-      if (signInStatus === 'complete') {
-        await signIn.finalize({ navigate: navigateToDashboard });
+      if (signUp.status === 'complete') {
+        await finalizeSignUp();
+        return;
+      }
+
+      if (signIn.status === 'needs_second_factor' || signIn.status === 'needs_new_password') {
+        navigateToSignIn();
         return;
       }
 
@@ -68,7 +105,7 @@ export default function SSOCallbackPage() {
     };
 
     void run().catch(() => {
-      router.replace('/auth/login');
+      navigateToSignIn();
     });
   }, [clerk, signIn, signUp, router]);
 

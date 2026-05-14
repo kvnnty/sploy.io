@@ -98,18 +98,6 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  STRIPE_PRICE_AI_QUERY_METERED?: string;
-
-  @IsOptional()
-  @IsString()
-  STRIPE_PRICE_AGENT_RUN_METERED?: string;
-
-  @IsOptional()
-  @IsString()
-  STRIPE_PRICE_ACTION_EXECUTION_METERED?: string;
-
-  @IsOptional()
-  @IsString()
   STRIPE_BILLING_PORTAL_RETURN_URL?: string;
 }
 

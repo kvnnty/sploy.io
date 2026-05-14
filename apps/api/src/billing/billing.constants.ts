@@ -1,8 +1,5 @@
 import { BillingPlan } from '@prisma/client';
 
-/** Default batch interval for reporting metered usage to Stripe (ms). */
-export const USAGE_SYNC_INTERVAL_MS = 60_000;
-
 /** Soft warning threshold: fraction of limit. */
 export const USAGE_WARNING_RATIO = 0.8;
 

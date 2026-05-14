@@ -3,7 +3,11 @@
   "private": true,
   "packageManager": "pnpm@10.6.5",
   "pnpm": {
-    "onlyBuiltDependencies": ["@nestjs/core", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "scripts": {
     "dev": "turbo dev",
@@ -12,8 +16,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.4.4",
-    "typescript": "^5.8.2"
+    "prettier": "^3.8.3",
+    "turbo": "^2.9.14",
+    "typescript": "^5.9.3"
   }
 }

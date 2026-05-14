@@ -173,30 +173,17 @@ export class StripeWebhookService {
     const priceStarter = this.config.get<string>('STRIPE_PRICE_STARTER_MONTHLY');
     const priceGrowth = this.config.get<string>('STRIPE_PRICE_GROWTH_MONTHLY');
     const pricePro = this.config.get<string>('STRIPE_PRICE_PRO_MONTHLY');
-    const priceAi = this.config.get<string>('STRIPE_PRICE_AI_QUERY_METERED');
-    const priceAgent = this.config.get<string>('STRIPE_PRICE_AGENT_RUN_METERED');
-    const priceAction = this.config.get<string>(
-      'STRIPE_PRICE_ACTION_EXECUTION_METERED',
-    );
 
     let plan =
       (sub.metadata?.plan as BillingPlan | undefined) ?? BillingPlan.free;
-    let siAi: string | null = null;
-    let siAgent: string | null = null;
-    let siAction: string | null = null;
 
     for (const item of sub.items.data) {
       const priceId = item.price.id;
       const recurring = item.price.recurring;
-      if (recurring?.usage_type === 'metered') {
-        if (priceId === priceAi) siAi = item.id;
-        else if (priceId === priceAgent) siAgent = item.id;
-        else if (priceId === priceAction) siAction = item.id;
-      } else {
-        if (priceId === priceStarter) plan = BillingPlan.starter;
-        else if (priceId === priceGrowth) plan = BillingPlan.growth;
-        else if (priceId === pricePro) plan = BillingPlan.pro;
-      }
+      if (recurring?.usage_type === 'metered') continue;
+      if (priceId === priceStarter) plan = BillingPlan.starter;
+      else if (priceId === priceGrowth) plan = BillingPlan.growth;
+      else if (priceId === pricePro) plan = BillingPlan.pro;
     }
 
     const periodStart = new Date(subscriptionPeriodStart(sub) * 1000);
@@ -208,9 +195,9 @@ export class StripeWebhookService {
       where: { id: teamId },
       data: {
         stripeSubscriptionId: sub.id,
-        stripeSubscriptionItemAiQueryId: siAi,
-        stripeSubscriptionItemAgentRunId: siAgent,
-        stripeSubscriptionItemActionExecutionId: siAction,
+        stripeSubscriptionItemAiQueryId: null,
+        stripeSubscriptionItemAgentRunId: null,
+        stripeSubscriptionItemActionExecutionId: null,
         billingPlan: plan,
         billingStatus: this.mapStripeSubStatus(sub.status),
         billingPeriodStart: periodStart,
