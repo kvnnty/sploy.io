@@ -1,37 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useClerk, useSignIn } from '@clerk/nextjs';
+import { useAuth, useSignIn } from '@clerk/nextjs';
 import { OAuthLastUsedBadge } from '@/components/auth/oauth-last-used-badge';
 import Logo from '@/components/shared/logo';
 import { formatClerkError } from '@/lib/clerk-errors';
 import { useLastOAuthStrategy, type OAuthStrategy } from '@/lib/last-oauth-strategy';
 
+function AuthPageSpinner() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
-  const { loaded: clerkLoaded } = useClerk();
+  const { isLoaded: sessionLoaded, isSignedIn } = useAuth();
   const { signIn } = useSignIn();
   const { lastStrategy, rememberStrategy } = useLastOAuthStrategy();
   const [email, setEmail] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthPending, setOauthPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!sessionLoaded || !isSignedIn) return;
+    window.location.assign('/dashboard');
+  }, [sessionLoaded, isSignedIn]);
+
   async function signInWithOAuth(strategy: OAuthStrategy) {
-    if (!clerkLoaded || !signIn) return;
+    if (!sessionLoaded || !signIn || oauthPending) return;
     rememberStrategy(strategy);
     setError(null);
-    const { error } = await signIn.sso({
-      strategy,
-      redirectUrl: '/dashboard',
-      redirectCallbackUrl: '/auth/sso-callback',
-    });
-    if (error) setError(formatClerkError(error));
+    setOauthPending(true);
+    try {
+      const { error } = await signIn.sso({
+        strategy,
+        redirectUrl: '/dashboard',
+        redirectCallbackUrl: '/auth/sso-callback',
+      });
+      if (error) setError(formatClerkError(error));
+    } finally {
+      setOauthPending(false);
+    }
   }
 
   async function signInWithMagicLink(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !clerkLoaded || !signIn) return;
+    if (!email || !sessionLoaded || !signIn) return;
     setLoading(true);
     setError(null);
 
@@ -49,6 +68,18 @@ export default function LoginPage() {
       setMagicLinkSent(true);
     }
     setLoading(false);
+  }
+
+  if (!sessionLoaded) {
+    return <AuthPageSpinner />;
+  }
+
+  if (isSignedIn) {
+    return <AuthPageSpinner />;
+  }
+
+  if (!signIn) {
+    return <AuthPageSpinner />;
   }
 
   if (magicLinkSent) {
@@ -88,7 +119,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_google')}
-            disabled={!clerkLoaded}
+            disabled={oauthPending}
             className="relative flex w-full items-center justify-between gap-2 cursor-pointer rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
@@ -106,7 +137,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => signInWithOAuth('oauth_microsoft')}
-            disabled={!clerkLoaded}
+            disabled={oauthPending}
             className="relative flex w-full items-center justify-between gap-2 cursor-pointer rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">

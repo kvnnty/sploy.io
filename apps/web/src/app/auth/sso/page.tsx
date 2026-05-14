@@ -1,32 +1,45 @@
 'use client';
 
-import { useState } from 'react';
-import { useSignIn } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
+import { useAuth, useSignIn } from '@clerk/nextjs';
 import { formatClerkError } from '@/lib/clerk-errors';
 
 export default function SSOPage() {
+  const { isLoaded: sessionLoaded, isSignedIn } = useAuth();
   const { signIn } = useSignIn();
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sessionLoaded || !isSignedIn) return;
+    window.location.assign('/dashboard');
+  }, [sessionLoaded, isSignedIn]);
 
   async function handleSSO(e: React.FormEvent) {
     e.preventDefault();
     if (!domain || !signIn) return;
     setLoading(true);
     setError(null);
-
-    const { error } = await signIn.sso({
-      strategy: 'enterprise_sso',
-      identifier: domain,
-      redirectUrl: '/dashboard',
-      redirectCallbackUrl: '/auth/sso-callback',
-    });
-
-    if (error) {
-      setError(formatClerkError(error));
+    try {
+      const { error } = await signIn.sso({
+        strategy: 'enterprise_sso',
+        identifier: domain,
+        redirectUrl: '/dashboard',
+        redirectCallbackUrl: '/auth/sso-callback',
+      });
+      if (error) setError(formatClerkError(error));
+    } finally {
       setLoading(false);
     }
+  }
+
+  if (!sessionLoaded || isSignedIn || !signIn) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+      </div>
+    );
   }
 
   return (
@@ -59,7 +72,7 @@ export default function SSOPage() {
             disabled={loading}
             className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? 'Redirecting...' : 'Continue with SSO'}
+            {loading ? 'Please wait…' : 'Continue with SSO'}
           </button>
         </form>
 

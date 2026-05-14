@@ -88,9 +88,6 @@ export class BillingService {
     }
 
     const base = this.planToBasePrice(plan);
-    const ai = this.requireEnv('STRIPE_PRICE_AI_QUERY_METERED');
-    const agent = this.requireEnv('STRIPE_PRICE_AGENT_RUN_METERED');
-    const action = this.requireEnv('STRIPE_PRICE_ACTION_EXECUTION_METERED');
 
     const baseUrl = this.appBaseUrl();
     const sep = CHECKOUT_SUCCESS_PATH.includes('?') ? '&' : '?';
@@ -101,12 +98,7 @@ export class BillingService {
       mode: 'subscription',
       customer: customerId,
       client_reference_id: teamId,
-      line_items: [
-        { price: base, quantity: 1 },
-        { price: ai, quantity: 1 },
-        { price: agent, quantity: 1 },
-        { price: action, quantity: 1 },
-      ],
+      line_items: [{ price: base, quantity: 1 }],
       metadata: { teamId, plan },
       subscription_data: {
         metadata: { teamId, plan },

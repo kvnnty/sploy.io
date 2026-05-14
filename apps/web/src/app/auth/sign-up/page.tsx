@@ -1,32 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useClerk, useSignUp } from '@clerk/nextjs';
+import { useAuth, useSignUp } from '@clerk/nextjs';
 import { OAuthLastUsedBadge } from '@/components/auth/oauth-last-used-badge';
 import Logo from '@/components/shared/logo';
 import { formatClerkError } from '@/lib/clerk-errors';
 import { useLastOAuthStrategy, type OAuthStrategy } from '@/lib/last-oauth-strategy';
 
 export default function SignUpPage() {
-  const { loaded: clerkLoaded } = useClerk();
+  const { isLoaded: sessionLoaded, isSignedIn } = useAuth();
   const { signUp } = useSignUp();
   const { lastStrategy, rememberStrategy } = useLastOAuthStrategy();
   const [email, setEmail] = useState('');
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthPending, setOauthPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!sessionLoaded || !isSignedIn) return;
+    window.location.assign('/dashboard');
+  }, [sessionLoaded, isSignedIn]);
+
   async function signUpWithOAuth(strategy: OAuthStrategy) {
-    if (!signUp) return;
+    if (!signUp || oauthPending) return;
     rememberStrategy(strategy);
     setError(null);
-    const { error: err } = await signUp.sso({
-      strategy,
-      redirectUrl: '/dashboard',
-      redirectCallbackUrl: '/auth/sso-callback',
-    });
-    if (err) setError(formatClerkError(err));
+    setOauthPending(true);
+    try {
+      const { error: err } = await signUp.sso({
+        strategy,
+        redirectUrl: '/dashboard',
+        redirectCallbackUrl: '/auth/sso-callback',
+      });
+      if (err) setError(formatClerkError(err));
+    } finally {
+      setOauthPending(false);
+    }
   }
 
   async function signUpWithMagicLink(e: React.FormEvent) {
@@ -57,7 +68,7 @@ export default function SignUpPage() {
     setLoading(false);
   }
 
-  if (!clerkLoaded || !signUp) {
+  if (!sessionLoaded || isSignedIn || !signUp) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
@@ -105,7 +116,8 @@ export default function SignUpPage() {
           <button
             type="button"
             onClick={() => signUpWithOAuth('oauth_google')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            disabled={oauthPending}
+            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
@@ -122,7 +134,8 @@ export default function SignUpPage() {
           <button
             type="button"
             onClick={() => signUpWithOAuth('oauth_microsoft')}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70"
+            disabled={oauthPending}
+            className="relative flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted/70 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex min-w-0 flex-1 items-center justify-center gap-3">
               <svg className="h-5 w-5 shrink-0" viewBox="0 0 21 21">

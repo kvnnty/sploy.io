@@ -370,7 +370,7 @@ export function BillingSettingsWorkspace() {
             />
             <UsageMeter
               label="Connected data sources"
-              caption={`${s.usage.connectorUsages.toLocaleString()} connector usage events billed this period (metered signals).`}
+              caption={`${s.usage.connectorUsages.toLocaleString()} connector usage events this billing period.`}
               used={s.connectorCount}
               limit={s.limits.maxConnectors}
             />
