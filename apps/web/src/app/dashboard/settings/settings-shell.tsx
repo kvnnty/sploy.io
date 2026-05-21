@@ -14,6 +14,7 @@ const tabs = [
   { href: '/dashboard/settings/team', label: DASHBOARD_ROUTES.settingsTeam.pageTitle },
   { href: '/dashboard/settings/billing', label: DASHBOARD_ROUTES.settingsBilling.pageTitle },
   { href: '/dashboard/settings/notifications', label: DASHBOARD_ROUTES.settingsNotifications.pageTitle },
+  { href: '/dashboard/settings/integrations', label: 'Integrations' },
 ] as const;
 
 export function SettingsShell({ children }: { children: ReactNode }) {

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,29 +10,24 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TeamRole } from '@prisma/client';
-import { UsageEventType } from '@prisma/client';
+import { CurrentUser, Roles, type AuthUser } from '../auth';
 import { TeamMemberGuard } from '../auth/guards/team-member.guard';
-import { Roles } from '../auth';
+import { AnalysisAskService } from '../analysis/analysis-ask.service';
 import { DataSourcesService } from './data-sources.service';
 import {
   AskDto,
   CreateDataSourceDto,
   RunQueryDto,
 } from './dto/data-sources.dto';
-import { AnalysisBriefService } from '../query/analysis-brief.service';
-import { NlSqlService } from '../query/nl-sql.service';
-import { EntitlementsService } from '../billing/entitlements/entitlements.service';
-import { UsageService } from '../billing/usage/usage.service';
+import { SchemaDiscoveryService } from '../query/schema-discovery.service';
 
 @Controller('teams/:teamId/data-sources')
 @UseGuards(TeamMemberGuard)
 export class DataSourcesController {
   constructor(
     private readonly dataSources: DataSourcesService,
-    private readonly nlSql: NlSqlService,
-    private readonly analysisBrief: AnalysisBriefService,
-    private readonly entitlements: EntitlementsService,
-    private readonly usage: UsageService,
+    private readonly analysisAsk: AnalysisAskService,
+    private readonly schemaDiscovery: SchemaDiscoveryService,
   ) {}
 
   @Post()
@@ -65,6 +61,15 @@ export class DataSourcesController {
     return this.dataSources.testConnection(teamId, dataSourceId);
   }
 
+  @Get(':dataSourceId/schema')
+  async schema(
+    @Param('teamId', ParseUUIDPipe) teamId: string,
+    @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
+  ) {
+    const conn = await this.dataSources.getConnectionParams(teamId, dataSourceId);
+    return this.schemaDiscovery.discover(conn);
+  }
+
   @Post(':dataSourceId/query')
   runQuery(
     @Param('teamId', ParseUUIDPipe) teamId: string,
@@ -79,21 +84,35 @@ export class DataSourcesController {
     @Param('teamId', ParseUUIDPipe) teamId: string,
     @Param('dataSourceId', ParseUUIDPipe) dataSourceId: string,
     @Body() dto: AskDto,
+    @CurrentUser() user: AuthUser,
   ) {
-    await this.entitlements.assertCanRunAiQuery(teamId);
-    const sql =
-      dto.sql?.trim() ||
-      (await this.nlSql.questionToSelectSql(dto.question, dto.schemaHint));
-    const result = await this.dataSources.runQuery(teamId, dataSourceId, sql);
-    const brief = await this.analysisBrief.summarize({
-      question: dto.question,
-      sql,
-      rows: result.rows,
-      truncated: result.truncated,
-    });
-    await this.usage.record(teamId, UsageEventType.ai_query, {
+    const userId = user.internalUserId;
+    if (!userId) {
+      throw new BadRequestException('User context missing');
+    }
+
+    let schemaHint = dto.schemaHint?.trim();
+    let schemaUsed = Boolean(schemaHint);
+
+    if (!schemaHint && !dto.sql?.trim()) {
+      const conn = await this.dataSources.getConnectionParams(
+        teamId,
+        dataSourceId,
+      );
+      const discovered = await this.schemaDiscovery.discover(conn);
+      schemaHint = this.schemaDiscovery.formatSchemaHint(discovered);
+      schemaUsed = true;
+    }
+
+    return this.analysisAsk.completeAsk({
+      teamId,
+      userId,
       dataSourceId,
+      question: dto.question,
+      schemaHint,
+      sql: dto.sql,
+      schemaUsed,
+      runQuery: (sql) => this.dataSources.runQuery(teamId, dataSourceId, sql),
     });
-    return { sql, ...result, brief: brief ?? undefined };
   }
 }

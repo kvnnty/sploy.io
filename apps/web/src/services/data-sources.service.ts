@@ -1,7 +1,7 @@
 import type { AxiosInstance } from 'axios';
 
+import type { AskResponse } from '@/types/analysis.types';
 import type {
-  AskDataSourceResponse,
   CreateDataSourceBody,
   DataSourceSummary,
 } from '@/types/data-source.types';
@@ -41,13 +41,22 @@ export class DataSourcesService {
       .then((r) => r.data);
   }
 
+  getSchema(
+    teamId: string,
+    dataSourceId: string,
+  ): Promise<{ tables: { name: string; columns: { name: string; type: string }[] }[] }> {
+    return this.http
+      .get(`/teams/${teamId}/data-sources/${dataSourceId}/schema`)
+      .then((r) => r.data);
+  }
+
   ask(
     teamId: string,
     dataSourceId: string,
     body: { question: string; schemaHint?: string },
-  ): Promise<AskDataSourceResponse> {
+  ): Promise<AskResponse> {
     return this.http
-      .post<AskDataSourceResponse>(
+      .post<AskResponse>(
         `/teams/${teamId}/data-sources/${dataSourceId}/ask`,
         body,
       )

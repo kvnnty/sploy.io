@@ -58,8 +58,10 @@ export class BillingService {
   async createCheckoutSession(params: {
     teamId: string;
     plan: BillingPlan;
+    /** Logged-in user email — stored on Stripe Customer so Checkout pre-fills contact email */
+    billingEmail?: string;
   }): Promise<{ url: string | null }> {
-    const { teamId, plan } = params;
+    const { teamId, plan, billingEmail } = params;
     if (
       plan !== BillingPlan.starter &&
       plan !== BillingPlan.growth &&
@@ -78,6 +80,7 @@ export class BillingService {
     if (!customerId) {
       const c = await stripe.customers.create({
         name: team.name,
+        ...(billingEmail ? { email: billingEmail } : {}),
         metadata: { teamId },
       });
       customerId = c.id;
@@ -85,6 +88,8 @@ export class BillingService {
         where: { id: teamId },
         data: { stripeCustomerId: customerId },
       });
+    } else if (billingEmail) {
+      await stripe.customers.update(customerId, { email: billingEmail });
     }
 
     const base = this.planToBasePrice(plan);

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth, useSignIn } from '@clerk/nextjs';
 import { OAuthLastUsedBadge } from '@/components/auth/oauth-last-used-badge';
+import { EnvelopeIcon } from '@/components/icons';
 import Logo from '@/components/shared/logo';
 import { formatClerkError } from '@/lib/clerk-errors';
 import { useLastOAuthStrategy, type OAuthStrategy } from '@/lib/last-oauth-strategy';
@@ -86,10 +87,8 @@ export default function LoginPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="mx-auto w-full max-w-sm space-y-4 flex flex-col items-center justify-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
-            <svg className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/20">
+            <EnvelopeIcon className="size-6 text-emerald-500 dark:text-emerald-400" aria-hidden />
           </div>
           <h2 className="text-xl font-semibold text-foreground text-center">Check your email</h2>
           <p className="text-sm text-foreground/60 text-center">

@@ -4,20 +4,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
-  Cable,
   CheckCircle2,
   CircleDashed,
   CreditCard,
   FlaskConical,
-  Library,
   MenuIcon,
-  NotebookTabs,
   PlusSquare,
   Settings2,
-  Sparkles,
+  CircleStackIcon,
+  QueueListIcon,
+  RectangleStackIcon,
+  SparklesIcon,
   User,
-  Workflow,
-} from 'lucide-react';
+} from '@/components/icons';
+import { NotebookTabs } from 'lucide-react';
 
 import Logo from '@/components/shared/logo';
 import { Navbar } from '@/components/navbar/navbar';
@@ -30,21 +30,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { Icon } from '@/components/icons/icon';
 import { cn } from '@/lib/utils';
+import type { IconComponent } from '@/components/icons/types';
 import type { AuthMeResponse, TeamMembership } from '@/types';
 import { DASHBOARD_ROUTES } from '@/lib/dashboard-titles';
 
 import { TeamSwitcher } from './team-switcher';
 import { ActiveTeamProvider } from './active-team-provider';
 
-const nav = [
+const nav: { href: string; label: string; icon: IconComponent }[] = [
   { href: '/dashboard', label: DASHBOARD_ROUTES.new.pageTitle, icon: PlusSquare },
-  { href: '/dashboard/tasks', label: DASHBOARD_ROUTES.tasks.pageTitle, icon: Workflow },
+  { href: '/dashboard/tasks', label: DASHBOARD_ROUTES.tasks.pageTitle, icon: QueueListIcon },
   { href: '/dashboard/notebooks', label: DASHBOARD_ROUTES.notebooks.pageTitle, icon: NotebookTabs },
-  { href: '/dashboard/library', label: DASHBOARD_ROUTES.library.pageTitle, icon: Library },
-  { href: '/dashboard/data-connectors', label: DASHBOARD_ROUTES.dataConnectors.pageTitle, icon: Cable },
-  { href: '/dashboard/custom-agents', label: DASHBOARD_ROUTES.customAgents.pageTitle, icon: Sparkles },
-] as const;
+  { href: '/dashboard/library', label: DASHBOARD_ROUTES.library.pageTitle, icon: RectangleStackIcon },
+  { href: '/dashboard/data-connectors', label: DASHBOARD_ROUTES.dataConnectors.pageTitle, icon: CircleStackIcon },
+  { href: '/dashboard/custom-agents', label: DASHBOARD_ROUTES.customAgents.pageTitle, icon: SparklesIcon },
+];
 
 const settingsNav = [
   { href: '/dashboard/settings/account', label: 'Account settings', icon: User },
@@ -62,7 +64,7 @@ function NavLinks({
 
   return (
     <nav className={cn('flex flex-col gap-0.5', className)}>
-      {nav.map(({ href, label, icon: Icon }) => {
+      {nav.map(({ href, label, icon: navIcon }) => {
         const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`));
         return (
           <Link
@@ -76,7 +78,7 @@ function NavLinks({
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground',
             )}
           >
-            <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
+            <Icon icon={navIcon} className="size-4 opacity-80" />
             {label}
           </Link>
         );
@@ -86,7 +88,7 @@ function NavLinks({
         <p className="mb-1.5 px-2.5 text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground">
           Settings
         </p>
-        {settingsNav.map(({ href, label, icon: Icon }) => {
+        {settingsNav.map(({ href, label, icon: settingsIcon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -100,7 +102,7 @@ function NavLinks({
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
-              <Icon className="size-4 shrink-0 opacity-80" aria-hidden />
+              <Icon icon={settingsIcon} className="size-4 opacity-80" />
               {label}
             </Link>
           );

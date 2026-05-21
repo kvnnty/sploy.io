@@ -31,6 +31,22 @@ export const queryKeys = {
     root: ['data-sources'] as const,
     list: (teamId: string) =>
       [...queryKeys.dataSources.root, 'list', teamId] as const,
+    schema: (teamId: string, dataSourceId: string) =>
+      [...queryKeys.dataSources.root, 'schema', teamId, dataSourceId] as const,
+  },
+  analysis: {
+    root: ['analysis'] as const,
+    runs: (teamId: string) =>
+      [...queryKeys.analysis.root, 'runs', teamId] as const,
+    run: (teamId: string, runId: string) =>
+      [...queryKeys.analysis.root, 'run', teamId, runId] as const,
+    slack: (teamId: string) =>
+      [...queryKeys.analysis.root, 'slack', teamId] as const,
+  },
+  imports: {
+    root: ['imports'] as const,
+    list: (teamId: string) =>
+      [...queryKeys.imports.root, 'list', teamId] as const,
   },
   billing: {
     root: ['billing'] as const,

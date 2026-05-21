@@ -1,0 +1,15 @@
+model TeamImport {
+  id        String   @id @default(uuid()) @db.Uuid
+  teamId    String   @map("team_id") @db.Uuid
+  name      String
+  tableName String   @map("table_name")
+  columns   Json     @default("[]")
+  rowCount  Int      @default(0) @map("row_count")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team         Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  analysisRuns AnalysisRun[]
+
+  @@index([teamId, createdAt(sort: Desc)], map: "idx_team_imports_team_created")
+  @@map("team_imports")
+}

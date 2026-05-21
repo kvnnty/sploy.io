@@ -3,10 +3,11 @@ import { ConfigService } from '@nestjs/config';
 
 export type AskAnalysisBrief = {
   answer: string;
+  sqlExplanation: string;
   drivers: { headline: string; detail: string }[];
   recommendedNextStep: string;
   caveats: string[];
-  confidence: 'low' | 'medium';
+  confidence: 'low' | 'medium' | 'high';
 };
 
 @Injectable()
@@ -43,7 +44,8 @@ export class AnalysisBriefService {
       'Be precise; do not invent numbers not present in the sample.',
       'If the sample is empty or too small to support conclusions, say so and list caveats.',
       'Return ONLY valid JSON matching this shape (no markdown):',
-      '{"answer":"string","drivers":[{"headline":"string","detail":"string"}],"recommendedNextStep":"string","caveats":["string"],"confidence":"low"|"medium"}',
+      '{"answer":"string","sqlExplanation":"string","drivers":[{"headline":"string","detail":"string"}],"recommendedNextStep":"string","caveats":["string"],"confidence":"low"|"medium"|"high"}',
+      'sqlExplanation: 2-3 plain sentences describing what the SQL does (no jargon).',
       'drivers: at most 3 items, ordered by strength of evidence in the data.',
       'confidence: use "low" when sample is tiny, truncated, or ambiguous.',
     ].join(' ');
@@ -126,11 +128,34 @@ export class AnalysisBriefService {
         .map((c) => c.trim())
         .slice(0, 5);
 
-      const confidence =
-        parsed.confidence === 'medium' ? 'medium' : 'low';
+      const sqlExplanation =
+        typeof parsed.sqlExplanation === 'string'
+          ? parsed.sqlExplanation.trim()
+          : '';
+
+      let confidence: AskAnalysisBrief['confidence'] = 'low';
+      if (parsed.confidence === 'high') confidence = 'high';
+      else if (parsed.confidence === 'medium') confidence = 'medium';
+
+      if (
+        !input.truncated &&
+        input.rows.length >= 10 &&
+        confidence !== 'low'
+      ) {
+        confidence = 'high';
+      } else if (
+        !input.truncated &&
+        input.rows.length >= 10 &&
+        confidence === 'low'
+      ) {
+        confidence = 'medium';
+      }
 
       return {
         answer,
+        sqlExplanation:
+          sqlExplanation ||
+          'This query reads from your connected data and summarizes it for your question.',
         drivers,
         recommendedNextStep:
           recommendedNextStep || 'Review the query results with your team.',

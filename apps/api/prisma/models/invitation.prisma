@@ -3,7 +3,6 @@ enum InvitationStatus {
   accepted
   declined
   expired
-
 }
 
 model Invitation {

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { AskWorkspace } from './ask-workspace';
 import { DASHBOARD_ROUTES } from '@/lib/dashboard-titles';
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function AskPage() {
-  return <AskWorkspace />;
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted-foreground">Loading…</p>}>
+      <AskWorkspace />
+    </Suspense>
+  );
 }

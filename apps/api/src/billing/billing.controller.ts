@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser, type AuthUser } from '../auth';
 import { BillingService } from './billing.service';
 import { CheckoutSessionDto, PortalSessionDto } from './dto/billing.dto';
 import { BillingTeamAdminGuard } from './guards/billing-team-admin.guard';
@@ -18,10 +19,14 @@ export class BillingController {
 
   @Post('checkout-session')
   @UseGuards(BillingTeamAdminGuard)
-  createCheckout(@Body() dto: CheckoutSessionDto) {
+  createCheckout(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CheckoutSessionDto,
+  ) {
     return this.billing.createCheckoutSession({
       teamId: dto.teamId,
       plan: dto.plan,
+      billingEmail: user.email?.trim() || undefined,
     });
   }
 

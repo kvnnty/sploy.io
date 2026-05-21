@@ -101,6 +101,27 @@ export class DataSourcesService {
     );
   }
 
+  async getConnectionParams(
+    teamId: string,
+    id: string,
+  ): Promise<{
+    host: string;
+    port: number;
+    database: string;
+    user: string;
+    password: string;
+  }> {
+    const ds = await this.requireForTeam(teamId, id);
+    const password = this.crypto.decrypt(ds.encryptedCredential);
+    return {
+      host: ds.host,
+      port: ds.port,
+      database: ds.database,
+      user: ds.username,
+      password,
+    };
+  }
+
   private async requireForTeam(teamId: string, id: string): Promise<DataSource> {
     const ds = await this.prisma.dataSource.findFirst({
       where: { id, teamId },
