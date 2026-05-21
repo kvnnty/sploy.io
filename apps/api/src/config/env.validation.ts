@@ -32,6 +32,10 @@ export class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  DATASET_DATABASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
   MINIO_ENDPOINT?: string;
 
   @IsOptional()

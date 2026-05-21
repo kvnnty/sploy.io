@@ -1,0 +1,30 @@
+enum DecisionActionStatus {
+  draft
+  approved
+  sent
+}
+
+enum DeliveryChannel {
+  slack
+  email
+  copy
+}
+
+model DecisionAction {
+  id              String               @id @default(uuid()) @db.Uuid
+  teamId          String               @map("team_id") @db.Uuid
+  analysisRunId   String               @map("analysis_run_id") @db.Uuid
+  title           String
+  body            String
+  status          DecisionActionStatus @default(draft)
+  deliveryChannel DeliveryChannel      @default(slack) @map("delivery_channel")
+  sentAt          DateTime?            @map("sent_at") @db.Timestamptz(6)
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  analysisRun AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@index([teamId, createdAt(sort: Desc)], map: "idx_decision_actions_team_created")
+  @@map("decision_actions")
+}

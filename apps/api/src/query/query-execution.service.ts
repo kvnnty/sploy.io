@@ -18,7 +18,11 @@ export class QueryExecutionService {
   async runReadOnlySelect(
     conn: PgConnectionParams,
     sql: string,
-    opts?: { maxRows?: number; statementTimeoutMs?: number },
+    opts?: {
+      maxRows?: number;
+      statementTimeoutMs?: number;
+      searchPath?: string;
+    },
   ): Promise<{ rows: Record<string, unknown>[]; truncated: boolean }> {
     const maxRows = opts?.maxRows ?? DEFAULT_MAX_ROWS;
     const statementTimeoutMs = opts?.statementTimeoutMs ?? DEFAULT_STATEMENT_MS;
@@ -38,6 +42,11 @@ export class QueryExecutionService {
       await client.query(
         `SET statement_timeout = ${Math.floor(statementTimeoutMs)}`,
       );
+      if (opts?.searchPath) {
+        await client.query(
+          `SET search_path TO ${opts.searchPath.replace(/[^a-z0-9_]/gi, '')}`,
+        );
+      }
       const result = await client.query(wrapped);
       const rawRows = result.rows as Record<string, unknown>[];
       const truncated = rawRows.length > maxRows;

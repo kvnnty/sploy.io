@@ -1,0 +1,23 @@
+model AnalysisRun {
+  id           String   @id @default(uuid()) @db.Uuid
+  teamId       String   @map("team_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  dataSourceId String?  @map("data_source_id") @db.Uuid
+  importId     String?  @map("import_id") @db.Uuid
+  question     String
+  sql          String
+  rowCount     Int      @map("row_count")
+  truncated    Boolean  @default(false)
+  brief        Json?
+  chartSpec    Json?    @map("chart_spec")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  team       Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataSource DataSource?      @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+  teamImport TeamImport?      @relation(fields: [importId], references: [id], onDelete: SetNull)
+  actions    DecisionAction[]
+
+  @@index([teamId, createdAt(sort: Desc)], map: "idx_analysis_runs_team_created")
+  @@map("analysis_runs")
+}

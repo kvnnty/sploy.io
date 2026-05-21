@@ -1,0 +1,9 @@
+model TeamIntegration {
+  teamId             String   @id @map("team_id") @db.Uuid
+  slackWebhookUrlEnc String?  @map("slack_webhook_url_enc")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_integrations")
+}

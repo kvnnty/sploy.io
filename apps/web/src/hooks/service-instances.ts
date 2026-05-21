@@ -8,7 +8,9 @@ import { NotificationService } from '@/services/notification.service';
 import { SessionService } from '@/services/session.service';
 import { TeamService } from '@/services/team.service';
 import { UploadService } from '@/services/upload.service';
+import { AnalysisService } from '@/services/analysis.service';
 import { DataSourcesService } from '@/services/data-sources.service';
+import { ImportsService } from '@/services/imports.service';
 import { UserService } from '@/services/user.service';
 import { BillingService } from '@/services/billing.service';
 
@@ -40,6 +42,16 @@ export function useUploadService(): UploadService {
 export function useDataSourcesService(): DataSourcesService {
   const { axios } = useApiClient();
   return useMemo(() => new DataSourcesService(axios), [axios]);
+}
+
+export function useAnalysisService(): AnalysisService {
+  const { axios } = useApiClient();
+  return useMemo(() => new AnalysisService(axios), [axios]);
+}
+
+export function useImportsService(): ImportsService {
+  const { axios } = useApiClient();
+  return useMemo(() => new ImportsService(axios), [axios]);
 }
 
 export function useNotificationService(): NotificationService {

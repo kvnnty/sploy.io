@@ -9,7 +9,6 @@ enum AuthEventType {
   team_created
   membership_changed
   session_revoked
-
 }
 
 model AuthEvent {

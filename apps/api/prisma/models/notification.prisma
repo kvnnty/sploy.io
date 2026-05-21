@@ -2,7 +2,6 @@ enum NotificationCategory {
   account_security
   team_collaboration
   system_product
-
 }
 
 model Notification {

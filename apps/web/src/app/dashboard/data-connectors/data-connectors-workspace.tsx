@@ -34,7 +34,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { useAuthService, useDataSourcesService } from '@/hooks/service-instances';
+import {
+  useAuthService,
+  useDataSourcesService,
+  useImportsService,
+} from '@/hooks/service-instances';
 import { useConnectorDemos } from '@/hooks/use-connector-demos';
 import { ApiError } from '@/lib/axios';
 import {
@@ -204,6 +208,25 @@ export function DataConnectorsWorkspace() {
     queryKey: queryKeys.dataSources.list(teamId ?? ''),
     queryFn: () => dataSourcesApi.list(teamId!),
     enabled: Boolean(teamId),
+  });
+
+  const importsApi = useImportsService();
+  const importsQuery = useQuery({
+    queryKey: queryKeys.imports.list(teamId ?? ''),
+    queryFn: () => importsApi.list(teamId!),
+    enabled: Boolean(teamId),
+  });
+
+  const uploadCsvMutation = useMutation({
+    mutationFn: (file: File) => importsApi.upload(teamId!, file, file.name),
+    onSuccess: () => {
+      toast.success('CSV imported — ask questions in Ask');
+      void qc.invalidateQueries({ queryKey: queryKeys.imports.list(teamId!) });
+      pushActivity('CSV dataset uploaded', 'success');
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof ApiError ? err.message : 'CSV upload failed');
+    },
   });
 
   const [category, setCategory] = useState<ConnectorCategoryId>('recommended');
@@ -553,6 +576,55 @@ export function DataConnectorsWorkspace() {
 
       <div className="relative flex flex-col gap-8 xl:flex-row xl:items-start">
         <div className="min-w-0 flex-1 space-y-6">
+          {canManage ? (
+            <div className="rounded-2xl border border-border/70 bg-card/50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Upload CSV</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Export from Excel or Sheets as CSV — up to 10k rows. Then ask in{' '}
+                    <Link href="/dashboard/ask" className="text-primary hover:underline">
+                      Ask
+                    </Link>
+                    .
+                  </p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="sr-only"
+                    disabled={uploadCsvMutation.isPending}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadCsvMutation.mutateAsync(file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <span className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium">
+                    {uploadCsvMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-1 size-4 animate-spin" />
+                        Uploading…
+                      </>
+                    ) : (
+                      'Choose CSV'
+                    )}
+                  </span>
+                </label>
+              </div>
+              {(importsQuery.data?.length ?? 0) > 0 ? (
+                <ul className="mt-3 space-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                  {importsQuery.data!.map((imp) => (
+                    <li key={imp.id}>
+                      {imp.name} · {imp.rowCount.toLocaleString()} rows
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <div className="flex w-max gap-1 rounded-2xl border border-border/60 bg-muted/25 p-1">
               {CATEGORY_TABS.map((tab) => {

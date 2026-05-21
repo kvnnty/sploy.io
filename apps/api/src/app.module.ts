@@ -7,7 +7,10 @@ import { AuthModule } from './auth';
 import { BootstrapModule } from './bootstrap';
 import { DatabaseModule } from './database';
 import { SsoModule } from './sso';
+import { AnalysisModule } from './analysis/analysis.module';
 import { DataSourcesModule } from './data-sources/data-sources.module';
+import { ImportsModule } from './imports/imports.module';
+import { QueryModule } from './query/query.module';
 import { UserModule } from './user';
 import { SessionsModule } from './sessions';
 import { ProvidersModule } from './providers';
@@ -25,11 +28,14 @@ import { validate } from './config/env.validation';
     }),
     EventEmitterModule.forRoot(),
     DatabaseModule,
+    QueryModule,
     AuditModule,
     AuthModule,
     BootstrapModule,
     SsoModule,
     DataSourcesModule,
+    AnalysisModule,
+    ImportsModule,
     UserModule,
     SessionsModule,
     ProvidersModule,

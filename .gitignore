@@ -27,3 +27,7 @@ pnpm-debug.log*
 
 # Vercel
 .vercel
+
+# Docs
+ROADMAP.md
+MVP_CORE_PLAN.md
