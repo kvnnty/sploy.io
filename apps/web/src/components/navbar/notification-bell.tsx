@@ -177,7 +177,7 @@ export function NotificationBell() {
               setOpen(false);
               router.push('/dashboard/settings/notifications');
             }}
-            className="flex w-full items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="flex w-full items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             View all notifications
             <ExternalLink className="size-3" />
